@@ -213,7 +213,7 @@
         <!-- Header -->
         <div class="wood-header px-5 py-3 flex items-center justify-between border-b border-white/10">
             <div class="flex items-center gap-x-3">
-                <div class="w-9 h-9 bg-[#5c4033] rounded-2xl flex items-center justify-center text-3xl shadow">🀄︎</div>
+                <div class="w-9 h-9 bg-[#5c4033] rounded-2xl flex items-center justify-center text-xl font-black tracking-[-1px] text-amber-300 shadow">RK</div>
                 <div>
                     <span class="title-font text-3xl font-bold tracking-tighter">Rummikub</span>
                 </div>
@@ -574,19 +574,51 @@
         function canStealJoker(meldTiles, jokerTile, playerRack) {
             if (!jokerTile.isJoker) return false;
             
-            // Try each tile in player's rack as potential replacement
             for (let replacement of playerRack) {
                 if (replacement.isJoker) continue;
                 
-                // Remove joker, add replacement
                 const withoutJoker = meldTiles.filter(t => t.id !== jokerTile.id);
                 const testMeld = [...withoutJoker, replacement];
                 
                 if (isValidMeld(testMeld)) {
-                    return replacement; // Return the tile that works
+                    return replacement;
                 }
             }
             return null;
+        }
+
+        // Perform joker steal
+        function stealJoker(meldId, jokerId) {
+            const currentPlayer = getCurrentPlayer();
+            if (!currentPlayer) return;
+
+            const meldIndex = gameState.tableMelds.findIndex(m => m.id === meldId);
+            if (meldIndex === -1) return;
+
+            const meld = gameState.tableMelds[meldIndex];
+            const jokerTile = meld.tiles.find(t => t.id === jokerId);
+            if (!jokerTile || !jokerTile.isJoker) return;
+
+            const replacement = canStealJoker(meld.tiles, jokerTile, currentPlayer.rack);
+            if (!replacement) {
+                showToast("You don't have a tile that can replace this joker.", "error");
+                return;
+            }
+
+            // Remove replacement from rack
+            currentPlayer.rack = currentPlayer.rack.filter(t => t.id !== replacement.id);
+
+            // Replace joker in meld with the real tile
+            meld.tiles = meld.tiles.map(t => t.id === jokerId ? replacement : t);
+
+            // Add joker to player's rack
+            currentPlayer.rack.push(jokerTile);
+
+            gameState.playedThisTurn = true;
+
+            showToast("Joker stolen! You replaced it with your tile.", "success");
+            renderAll();
+            saveGameToLocalStorage();
         }
 
         // ==================== UI RENDERING ====================
@@ -648,8 +680,18 @@
                 return;
             }
 
+            const isCrowded = sortedRack.length > 16;
+            
             sortedRack.forEach(tile => {
                 const tileEl = createTileElement(tile, true);
+                
+                if (isCrowded) {
+                    // Make tiles smaller and allow better wrapping when rack is full
+                    tileEl.style.width = '2.6rem';
+                    tileEl.style.height = '3.6rem';
+                    tileEl.style.fontSize = isCrowded ? '1.1rem' : '1.3rem';
+                }
+                
                 container.appendChild(tileEl);
             });
 
@@ -661,19 +703,36 @@
             const container = document.getElementById('table-area');
             const noMeldsMsg = document.getElementById('no-melds-message');
             
-            // Clear previous melds (keep message)
-            const existingMelds = container.querySelectorAll('.meld-card');
-            existingMelds.forEach(m => m.remove());
+            // Clear previous melds and any old new-meld zone
+            container.querySelectorAll('.meld-card, .new-meld-zone').forEach(el => el.remove());
+
+            // Always show New Meld Drop Zone at the top
+            const newMeldZone = document.createElement('div');
+            newMeldZone.className = 'new-meld-zone mb-3';
+            newMeldZone.innerHTML = `
+                <div class="text-center py-2">
+                    <div class="font-semibold text-amber-300">Drop here to create new meld</div>
+                    <div class="text-[10px] text-white/50">Drag tiles from your rack</div>
+                </div>
+            `;
+            
+            // Drag & drop support for creating new meld
+            newMeldZone.ondragover = e => { e.preventDefault(); newMeldZone.classList.add('drag-over'); };
+            newMeldZone.ondragleave = () => newMeldZone.classList.remove('drag-over');
+            newMeldZone.ondrop = e => {
+                e.preventDefault();
+                newMeldZone.classList.remove('drag-over');
+                handleRackDropToNewMeld(e);
+            };
+            container.appendChild(newMeldZone);
 
             if (gameState.tableMelds.length === 0) {
                 noMeldsMsg.style.display = 'flex';
                 document.getElementById('table-meld-count').textContent = '0 melds';
-                return;
             } else {
                 noMeldsMsg.style.display = 'none';
+                document.getElementById('table-meld-count').textContent = `${gameState.tableMelds.length} meld${gameState.tableMelds.length > 1 ? 's' : ''}`;
             }
-
-            document.getElementById('table-meld-count').textContent = `${gameState.tableMelds.length} meld${gameState.tableMelds.length > 1 ? 's' : ''}`;
 
             gameState.tableMelds.forEach((meld, index) => {
                 const meldCard = document.createElement('div');
@@ -721,7 +780,8 @@
                 statusEl.textContent = 'Initial done';
                 statusEl.className = 'ml-2 text-[10px] px-2 py-0.5 bg-emerald-900/70 text-emerald-300 rounded-full align-middle';
             } else {
-                statusEl.textContent = 'Initial pending (30+)';
+                const progress = gameState.initialPointsThisTurn || 0;
+                statusEl.textContent = `Initial: ${progress}/30`;
                 statusEl.className = 'ml-2 text-[10px] px-2 py-0.5 bg-amber-900/70 text-amber-300 rounded-full align-middle';
             }
 
@@ -741,12 +801,20 @@
         function updateButtonStates() {
             const hasSelection = gameState.selectedTileIds.size > 0;
             const current = getCurrentPlayer();
+            const hasDrawn = gameState.hasDrawnThisTurn;
+
+            // If you have already drawn this turn, you cannot play any more tiles
+            document.getElementById('btn-lay-meld').disabled = hasDrawn || !hasSelection || !current;
             
-            document.getElementById('btn-lay-meld').disabled = !hasSelection || !current;
-            
-            // Draw button logic
-            const canDraw = gameState.pool.length > 0;
+            // Draw button - disabled if you've already played or drawn
+            const canDraw = gameState.pool.length > 0 && !gameState.playedThisTurn;
             document.getElementById('btn-draw').disabled = !canDraw;
+
+            // End Turn button
+            const endTurnBtn = document.getElementById('btn-end-turn');
+            if (endTurnBtn) {
+                endTurnBtn.disabled = !gameState.playedThisTurn;
+            }
         }
 
         function updateTurnStatus(message = '') {
@@ -862,14 +930,20 @@
                 return;
             }
 
-            // Initial meld check with better joker point calculation
+            // Initial meld progress (can be achieved over multiple melds in one turn)
             if (!currentPlayer.hasInitial) {
-                const points = calculateInitialPoints(selectedTiles);
-                if (points < 30) {
-                    alert(`Initial meld must total at least 30 points.\n\nYour selection is worth about ${points} points.\n\nTip: Include higher numbers or form multiple melds in one turn.`);
-                    return;
+                const pointsThisMeld = calculateInitialPoints(selectedTiles);
+                gameState.initialPointsThisTurn += pointsThisMeld;
+
+                const needed = Math.max(0, 30 - gameState.initialPointsThisTurn);
+
+                if (gameState.initialPointsThisTurn >= 30) {
+                    currentPlayer.hasInitial = true;
+                    showToast(`Initial requirement met! (${gameState.initialPointsThisTurn} points)`, "success");
+                } else {
+                    showToast(`Initial: ${gameState.initialPointsThisTurn}/30 points. Need ${needed} more.`, "info");
+                    // Do not set hasInitial yet — player can lay more melds
                 }
-                currentPlayer.hasInitial = true;
             }
 
             // Create new meld
@@ -894,6 +968,7 @@
                 return;
             }
 
+            autoSortCurrentRack();
             renderAll();
             const meldType = getMeldType(selectedTiles);
             updateTurnStatus(`Valid ${meldType} played! You can form more melds or End Turn.`);
@@ -960,11 +1035,14 @@
             const drawnTile = gameState.pool.shift();
             currentPlayer.rack.push(drawnTile);
 
-            gameState.playedThisTurn = false; // Drawing ends your ability to play more this turn in simple model
+            gameState.playedThisTurn = true;
+            gameState.hasDrawnThisTurn = true;
 
+            autoSortCurrentRack();
             clearSelection();
             renderAll();
-            updateTurnStatus('Drew 1 tile from the pool.');
+            updateTurnStatus('Drew 1 tile. Your turn is now over — pass to the next player.');
+            updateButtonStates();
 
             // Auto end turn after draw? For simplicity, let player press End Turn
             // But many digital versions auto-end after draw.
@@ -1014,7 +1092,10 @@
             // Prepare for next turn
             gameState.currentPlayerIndex = nextIndex;
             gameState.playedThisTurn = false;
+            gameState.hasDrawnThisTurn = false;
+            gameState.initialPointsThisTurn = 0; // Reset initial meld progress for next player
             gameState.selectedTileIds.clear();
+            gameState.heldTableTile = null;
 
             saveGameToLocalStorage();
         }
@@ -1123,28 +1204,81 @@
         function endGame(winner) {
             gameState.gameStarted = false;
 
-            // Calculate penalties
-            const scoresHTML = gameState.players.map(p => {
-                if (p === winner) {
-                    return `<div class="flex justify-between items-center py-1 text-emerald-400">
-                        <span>${p.name} (Winner)</span>
-                        <span class="font-mono font-bold">0</span>
-                    </div>`;
-                } else {
+            // Calculate penalties and update cumulative scores
+            let totalAddedToWinner = 0;
+
+            gameState.players.forEach(p => {
+                if (p !== winner) {
                     const penalty = p.rack.reduce((sum, t) => sum + (t.isJoker ? 30 : t.value), 0);
-                    return `<div class="flex justify-between items-center py-1">
-                        <span>${p.name}</span>
-                        <span class="font-mono text-red-400 font-bold">+${penalty}</span>
-                    </div>`;
+                    totalAddedToWinner += penalty;
+
+                    // Initialize if not exists
+                    if (!gameState.cumulativeScores[p.name]) gameState.cumulativeScores[p.name] = 0;
                 }
+            });
+
+            // Add to winner's cumulative score
+            if (!gameState.cumulativeScores[winner.name]) {
+                gameState.cumulativeScores[winner.name] = 0;
+            }
+            gameState.cumulativeScores[winner.name] += totalAddedToWinner;
+
+            // Build scores display
+            const scoresHTML = gameState.players.map(p => {
+                const isWinner = p === winner;
+                const penalty = isWinner ? 0 : p.rack.reduce((sum, t) => sum + (t.isJoker ? 30 : t.value), 0);
+                const cumulative = gameState.cumulativeScores[p.name] || 0;
+
+                return `<div class="flex justify-between items-center py-1 ${isWinner ? 'text-emerald-400' : ''}">
+                    <span>${p.name} ${isWinner ? '(Winner)' : ''}</span>
+                    <div class="text-right">
+                        <div class="font-mono ${isWinner ? 'text-emerald-400' : 'text-red-400'} font-bold">
+                            ${isWinner ? '+' : ''}${penalty}
+                        </div>
+                        <div class="text-[10px] text-white/50">Total: ${cumulative}</div>
+                    </div>
+                </div>`;
             }).join('');
 
-            document.getElementById('win-title').textContent = `${winner.name} wins!`;
-            document.getElementById('win-subtitle').textContent = 'Great game!';
+            const currentScore = gameState.cumulativeScores[winner.name] || 0;
+            const target = gameState.matchTarget || 0;
+
+            let title = `${winner.name} wins the round!`;
+            let subtitle = `+${totalAddedToWinner} points to ${winner.name}`;
+
+            if (target > 0 && currentScore >= target) {
+                title = `🏆 ${winner.name} wins the MATCH!`;
+                subtitle = `Reached ${currentScore} points (target: ${target})`;
+                playSound('win');
+            }
+
+            // Record in match history
+            gameState.matchHistory.push({
+                round: gameState.roundNumber,
+                winner: winner.name,
+                pointsAwarded: totalAddedToWinner
+            });
+
+            document.getElementById('win-title').textContent = title;
+            document.getElementById('win-subtitle').textContent = subtitle;
             document.getElementById('scores-list').innerHTML = scoresHTML;
+
+            // Add Next Round button
+            const existingNextBtn = document.getElementById('next-round-btn');
+            if (existingNextBtn) existingNextBtn.remove();
+
+            const nextRoundBtn = document.createElement('button');
+            nextRoundBtn.id = 'next-round-btn';
+            nextRoundBtn.className = 'mt-4 w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-2xl transition';
+            nextRoundBtn.textContent = 'Next Round →';
+            nextRoundBtn.onclick = startNextRound;
+
+            document.getElementById('win-modal').querySelector('.bg-\\[\\#3f2a1f\\]').appendChild(nextRoundBtn);
 
             document.getElementById('win-modal').classList.remove('hidden');
             document.getElementById('win-modal').classList.add('flex');
+
+            saveGameToLocalStorage();
         }
 
         function closeWinModal() {
@@ -1277,6 +1411,111 @@
             const menu = document.getElementById('game-menu');
             menu.classList.remove('flex');
             menu.classList.add('hidden');
+        }
+
+        function showSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            // Load current settings
+            const soundEnabled = localStorage.getItem('rummikubSound') !== 'false';
+            document.getElementById('setting-sound').checked = soundEnabled;
+        }
+
+        function hideSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+
+        function toggleSound(enabled) {
+            localStorage.setItem('rummikubSound', enabled ? 'true' : 'false');
+            if (enabled) {
+                playSound('move'); // Test sound
+            }
+        }
+
+        function setTileSize(size) {
+            const root = document.documentElement;
+            root.style.setProperty('--tile-scale', size === 'small' ? '0.85' : size === 'large' ? '1.25' : '1');
+
+            localStorage.setItem('rummikubTileSize', size);
+            showToast(`Tile size set to ${size}`, 'success');
+        }
+
+        function clearAllData() {
+            if (confirm('Clear all saved games and preferences? This cannot be undone.')) {
+                localStorage.removeItem('rummikubGameState');
+                localStorage.removeItem('rummikubSound');
+                localStorage.removeItem('rummikubTileSize');
+                location.reload();
+            }
+        }
+
+        function resetCumulativeScores() {
+            if (confirm('Reset cumulative scores for all players?')) {
+                gameState.cumulativeScores = {};
+                saveGameToLocalStorage();
+                hideSettings();
+                showToast('Cumulative scores have been reset.', 'success');
+            }
+        }
+
+        function showMatchHistory() {
+            hideSettings();
+
+            if (!gameState.matchHistory || gameState.matchHistory.length === 0) {
+                showToast("No rounds played yet.", "info");
+                return;
+            }
+
+            let html = `<div class="text-sm space-y-2 max-h-[60vh] overflow-y-auto">`;
+            
+            gameState.matchHistory.forEach(entry => {
+                html += `
+                    <div class="flex justify-between items-center bg-white/5 px-4 py-2 rounded-2xl">
+                        <div>
+                            <span class="font-semibold">Round ${entry.round}</span>
+                            <span class="text-white/60 text-xs ml-2">• ${entry.winner}</span>
+                        </div>
+                        <div class="font-mono text-emerald-400">+${entry.pointsAwarded}</div>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+
+            // Simple modal
+            const modal = document.createElement('div');
+            modal.className = `fixed inset-0 bg-black/80 z-[90] flex items-center justify-center p-6`;
+            modal.innerHTML = `
+                <div class="bg-[#3f2a1f] w-full max-w-sm rounded-3xl p-6 border border-white/10">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Match History</h3>
+                        <button onclick="this.closest('.fixed').remove()" class="text-2xl text-white/60 hover:text-white">×</button>
+                    </div>
+                    ${html}
+                    <button onclick="this.closest('.fixed').remove()" 
+                            class="mt-5 w-full py-3 bg-white/10 hover:bg-white/20 rounded-2xl text-sm">
+                        Close
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Handle dropping rack tile(s) on the New Meld zone
+        function handleRackDropToNewMeld(e) {
+            const currentPlayer = getCurrentPlayer();
+            if (!currentPlayer) return;
+
+            if (gameState.selectedTileIds.size >= 3) {
+                laySelectedAsMeld();
+                return;
+            }
+
+            showToast("Select 3+ tiles from your rack first, then drag them to this zone to create a new meld.", "info");
         }
 
         function showHelp() {
