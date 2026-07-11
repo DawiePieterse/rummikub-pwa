@@ -55,7 +55,50 @@
 
         .game-container {
             background: linear-gradient(180deg, #1C1C1E 0%, #000000 55%);
-            min-height: 100dvh;
+            height: 100dvh; /* fixed, not min-height — content must scroll within, never push the
+                                action buttons below the viewport (body is overflow:hidden) */
+        }
+
+        /* Meld cards size to their content instead of taking the full row width, so several
+           short melds (e.g. 3-4 tile groups) sit side by side instead of stacking one per line */
+        #table-area {
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            gap: 0.75rem;
+        }
+        #table-area .new-meld-zone {
+            flex-basis: 100%;
+            width: 100%;
+        }
+        #table-area .meld-card {
+            flex: 0 0 auto;
+        }
+        #table-area #no-melds-message {
+            flex-basis: 100%;
+            width: 100%;
+        }
+
+        /* ==================== DRAG AND DROP ==================== */
+        .tile[data-draggable="true"] {
+            touch-action: none; /* let our JS own the gesture instead of the browser's scroll/pan */
+            cursor: grab;
+        }
+        .tile.dragging-source {
+            opacity: 0.3;
+        }
+        .drag-ghost {
+            position: fixed;
+            pointer-events: none;
+            z-index: 200;
+            opacity: 0.94;
+            transform: scale(1.08) rotate(-2deg);
+            box-shadow: 0 14px 28px rgba(0,0,0,0.55);
+        }
+        .drag-over {
+            outline: 3px dashed #0A84FF;
+            outline-offset: 2px;
+            background-color: rgba(10,132,255,0.12) !important;
         }
 
         /* Frosted-glass surface used for panels, headers, and cards */
@@ -381,9 +424,9 @@
     </div>
 
     <!-- GAME SCREEN -->
-    <div id="game-screen" class="hidden min-h-dvh flex flex-col game-container">
+    <div id="game-screen" class="hidden h-dvh flex flex-col game-container overflow-hidden">
         <!-- Header -->
-        <div class="wood-header px-5 py-3 flex items-center justify-between border-b border-white/10">
+        <div class="wood-header px-5 py-3 flex items-center justify-between border-b border-white/10 flex-shrink-0">
             <div class="flex items-center gap-x-3">
                 <div class="w-9 h-9 bg-[#0A84FF] rounded-2xl flex items-center justify-center text-xl font-black tracking-[-1px] text-amber-300 shadow">RK</div>
                 <div>
@@ -404,29 +447,12 @@
             </div>
         </div>
 
-        <!-- Current Player Banner -->
-        <div id="player-banner" 
-             class="px-5 py-2.5 bg-gradient-to-r from-amber-900/60 to-transparent flex items-center justify-between border-b border-white/10">
-            <div class="flex items-center gap-x-3">
-                <div id="current-player-dot" 
-                     class="w-3.5 h-3.5 rounded-full bg-amber-400 ring-2 ring-amber-400/30"></div>
-                <div>
-                    <span id="current-player-name" class="font-semibold text-xl">Player 1</span>
-                    <span id="initial-status" class="ml-2 text-[10px] px-2 py-0.5 bg-white/10 rounded-full align-middle">Initial pending</span>
-                </div>
-            </div>
-            <div class="text-right">
-                <div class="text-[10px] text-amber-300/70">YOUR RACK</div>
-                <div id="rack-count" class="font-mono text-2xl font-bold tabular-nums leading-none">14</div>
-            </div>
-        </div>
+        <!-- Main split: left = table/melds (scrolls independently), right = your info + rack + actions (always visible) -->
+        <div class="flex-1 flex overflow-hidden min-h-0">
 
-        <!-- Main Content -->
-        <div class="flex-1 flex flex-col p-4 gap-y-3 overflow-hidden">
-            
-            <!-- TABLE / MELDS AREA -->
-            <div class="flex-1 flex flex-col min-h-0">
-                <div class="flex items-center justify-between mb-1.5 px-1">
+            <!-- LEFT: TABLE / MELDS AREA -->
+            <div class="flex-1 flex flex-col p-4 min-w-0 overflow-hidden">
+                <div class="flex items-center justify-between mb-1.5 px-1 flex-shrink-0">
                     <div class="section-title text-amber-300">Table • Melds</div>
                     <div id="table-meld-count" class="text-xs text-amber-300/60 font-mono">0 melds</div>
                 </div>
@@ -443,52 +469,73 @@
                 </div>
             </div>
 
-            <!-- RACK -->
-            <div class="flex-shrink-0">
-                <div class="flex items-center justify-between mb-1.5 px-1">
-                    <div class="section-title text-amber-300">Your Rack • Tap to select</div>
-                    <button onclick="sortRack()" 
-                            class="text-xs px-3 py-1 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-2xl transition flex items-center gap-x-1">
-                        <span>Sort</span>
-                    </button>
-                </div>
-                
-                <div id="rack-area" 
-                     class="rack-container bg-[#1C1C1E] border border-white/10 rounded-3xl p-3 flex gap-2 overflow-x-auto min-h-[5.2rem] items-center">
-                    <!-- Tiles populated by JS -->
-                </div>
-            </div>
-        </div>
+            <!-- RIGHT: current-turn info, your rack, and all actions — never pushed off screen -->
+            <div class="w-[400px] flex-shrink-0 border-l border-white/10 flex flex-col overflow-hidden">
 
-        <!-- Action Bar -->
-        <div class="p-4 pt-2 bg-[#000000] border-t border-white/10">
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-2xl mx-auto">
-                
-                <button onclick="laySelectedAsMeld()" 
-                        id="btn-lay-meld"
-                        class="col-span-2 sm:col-span-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-emerald-900/50 disabled:text-white/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2 shadow">
-                    <span>Play Selected<br><span class="text-[10px] opacity-75">as Valid Meld</span></span>
-                </button>
-                
-                <button onclick="drawTile()" 
-                        id="btn-draw"
-                        class="py-3.5 px-4 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 disabled:bg-sky-900/40 disabled:text-white/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2">
-                    <span>Draw Tile</span>
-                </button>
-                
-                <button onclick="endTurn()" 
-                        id="btn-end-turn"
-                        class="col-span-2 sm:col-span-1 py-3.5 px-5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:bg-amber-900/30 disabled:text-white/30 disabled:cursor-not-allowed disabled:shadow-none text-white font-bold transition-all rounded-2xl text-sm flex items-center justify-center gap-x-2 shadow">
-                    <span>End Turn &amp; Pass</span>
-                </button>
-                
-                <button onclick="showHelp()" 
-                        class="py-3.5 px-4 bg-white/10 hover:bg-white/20 active:bg-white/30 transition-all rounded-2xl text-sm flex items-center justify-center">
-                    Rules
-                </button>
+                <!-- Current Player Banner -->
+                <div id="player-banner" 
+                     class="px-5 py-3 bg-gradient-to-b from-amber-900/50 to-transparent flex items-center justify-between border-b border-white/10 flex-shrink-0">
+                    <div class="flex items-center gap-x-3 min-w-0">
+                        <div id="current-player-dot" 
+                             class="w-3.5 h-3.5 rounded-full bg-amber-400 ring-2 ring-amber-400/30 flex-shrink-0"></div>
+                        <div class="min-w-0">
+                            <div id="current-player-name" class="font-semibold text-lg leading-tight truncate">Player 1</div>
+                            <span id="initial-status" class="text-[10px] px-2 py-0.5 bg-white/10 rounded-full inline-block mt-1">Initial pending</span>
+                        </div>
+                    </div>
+                    <div class="text-right flex-shrink-0 pl-2">
+                        <div class="text-[10px] text-amber-300/70">YOUR RACK</div>
+                        <div id="rack-count" class="font-mono text-2xl font-bold tabular-nums leading-none">14</div>
+                    </div>
+                </div>
+
+                <!-- RACK -->
+                <div class="flex-1 flex flex-col p-4 min-h-0 overflow-hidden">
+                    <div class="flex items-center justify-between mb-1.5 px-1 flex-shrink-0">
+                        <div class="section-title text-amber-300">Your Rack</div>
+                        <button onclick="sortRack()" 
+                                class="text-xs px-3 py-1 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-2xl transition flex items-center gap-x-1">
+                            <span>Sort</span>
+                        </button>
+                    </div>
+                    
+                    <div id="rack-area" 
+                         class="rack-container bg-[#1C1C1E] border border-white/10 rounded-3xl p-3 flex flex-wrap content-start gap-2 overflow-y-auto flex-1 items-start">
+                        <!-- Tiles populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Action Bar -->
+                <div class="p-4 pt-2 border-t border-white/10 flex-shrink-0">
+                    <div class="grid grid-cols-2 gap-2">
+                        
+                        <button onclick="laySelectedAsMeld()" 
+                                id="btn-lay-meld"
+                                class="col-span-2 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-emerald-900/50 disabled:text-white/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2 shadow">
+                            <span>Play Selected<br><span class="text-[10px] opacity-75">as Valid Meld</span></span>
+                        </button>
+                        
+                        <button onclick="drawTile()" 
+                                id="btn-draw"
+                                class="py-3.5 px-4 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 disabled:bg-sky-900/40 disabled:text-white/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2">
+                            <span>Draw Tile</span>
+                        </button>
+                        
+                        <button onclick="endTurn()" 
+                                id="btn-end-turn"
+                                class="py-3.5 px-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:bg-amber-900/30 disabled:text-white/30 disabled:cursor-not-allowed disabled:shadow-none text-white font-bold transition-all rounded-2xl text-sm flex items-center justify-center gap-x-2 shadow">
+                            <span>End Turn &amp; Pass</span>
+                        </button>
+                        
+                        <button onclick="showHelp()" 
+                                class="col-span-2 py-3 px-4 bg-white/10 hover:bg-white/20 active:bg-white/30 transition-all rounded-2xl text-sm flex items-center justify-center">
+                            Rules
+                        </button>
+                    </div>
+                    
+                    <div id="turn-status" class="text-center text-[10px] text-amber-300/50 mt-2.5 min-h-[1rem]"></div>
+                </div>
             </div>
-            
-            <div id="turn-status" class="text-center text-[10px] text-amber-300/50 mt-2.5 h-4"></div>
         </div>
     </div>
 
@@ -500,7 +547,7 @@
             <p id="pass-to-name" class="text-xl text-amber-300 mb-6"></p>
             
             <button onclick="confirmPassToNext()" 
-                    class="w-full py-4 bg-white text-white font-bold text-lg rounded-2xl active:scale-[0.985] transition">
+                    class="w-full py-4 bg-white text-black font-bold text-lg rounded-2xl active:scale-[0.985] transition">
                 I'm ready — Start my turn
             </button>
             
@@ -727,6 +774,8 @@
                     endTurn();
                 } else if (msg.action === 'stealJoker') {
                     stealJoker(msg.meldId, msg.jokerId);
+                } else if (msg.action === 'moveTableTile') {
+                    moveTableTile(msg.fromMeldId, msg.tileId, msg.target || {});
                 }
             }
         }
@@ -1126,7 +1175,9 @@
         }
 
         // ==================== UI RENDERING ====================
-        function createTileElement(tile, isInRack = true) {
+        let lastDragEndAt = 0; // used to suppress a ghost tap-select right after a real drag
+
+        function createTileElement(tile, isInRack = true, dragCtx = null) {
             const el = document.createElement('div');
             el.className = `tile flex-shrink-0 rounded-2xl border-2 flex flex-col items-center justify-center cursor-pointer shadow-md ${COLOR_CLASSES[tile.color] || ''}`;
             
@@ -1146,7 +1197,10 @@
             el.dataset.tileId = tile.id;
 
             if (isInRack) {
-                el.onclick = () => toggleTileSelection(tile.id, el);
+                el.onclick = () => {
+                    if (Date.now() - lastDragEndAt < 300) return; // this click is the tail end of a drag, ignore it
+                    toggleTileSelection(tile.id, el);
+                };
                 
                 // Long press hint for future
                 el.oncontextmenu = (e) => {
@@ -1154,7 +1208,7 @@
                     // Future: show tile info or quick actions
                 };
             } else {
-                // Tiles on table are not selectable in v0.9
+                // Table tiles have no tap action by default (joker-steal below overrides this per-tile)
                 el.style.cursor = 'default';
                 el.onclick = null;
             }
@@ -1164,7 +1218,298 @@
                 el.classList.add('selected', 'ring-4', 'ring-yellow-400');
             }
 
+            // Wire up dragging (rack → board, or board → board/rack) when allowed for this viewer right now
+            if (dragCtx) {
+                attachTileDrag(el, tile, dragCtx.sourceType, dragCtx.meldId);
+            }
+
             return el;
+        }
+
+        // ==================== DRAG AND DROP (Pointer Events — works reliably on iPad touch,
+        // unlike the native HTML5 Drag and Drop API which iOS Safari only partially supports) ====================
+        let dragState = null; // { sourceType, tile, meldId, tileEl, ghostEl, startX, startY, offsetX, offsetY, width, height, dragging, lastTarget }
+
+        function canDragFromRack() {
+            return isMyTurn();
+        }
+
+        function canDragFromTable() {
+            if (!isMyTurn()) return false;
+            const me = netState.mode === 'client'
+                ? (clientView && clientView.players ? clientView.players[clientView.myIndex] : null)
+                : getMyPlayer();
+            return !!(me && me.hasInitial);
+        }
+
+        function attachTileDrag(tileEl, tile, sourceType, meldId) {
+            const allowed = sourceType === 'rack' ? canDragFromRack() : canDragFromTable();
+            if (!allowed) return;
+
+            tileEl.dataset.draggable = 'true';
+            tileEl.style.cursor = 'grab';
+            tileEl.addEventListener('pointerdown', (e) => {
+                if (e.button !== undefined && e.button !== 0) return; // primary touch/left-click only
+                startTileDrag(e, tileEl, tile, sourceType, meldId);
+            });
+        }
+
+        function startTileDrag(e, tileEl, tile, sourceType, meldId) {
+            const rect = tileEl.getBoundingClientRect();
+            dragState = {
+                sourceType, tile, meldId, tileEl,
+                startX: e.clientX, startY: e.clientY,
+                offsetX: e.clientX - rect.left, offsetY: e.clientY - rect.top,
+                width: rect.width, height: rect.height,
+                dragging: false,
+                ghostEl: null,
+                lastTarget: null,
+                pointerId: e.pointerId,
+            };
+            if (tileEl.setPointerCapture) {
+                try { tileEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+            }
+            tileEl.addEventListener('pointermove', onDragPointerMove);
+            tileEl.addEventListener('pointerup', onDragPointerUp);
+            tileEl.addEventListener('pointercancel', onDragPointerCancel);
+        }
+
+        function onDragPointerMove(e) {
+            if (!dragState) return;
+            const dx = e.clientX - dragState.startX;
+            const dy = e.clientY - dragState.startY;
+
+            if (!dragState.dragging) {
+                if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return; // small-movement threshold — still just a tap
+                e.preventDefault();
+                beginDragVisual();
+            } else {
+                e.preventDefault();
+            }
+
+            if (dragState.ghostEl) {
+                dragState.ghostEl.style.left = (e.clientX - dragState.offsetX) + 'px';
+                dragState.ghostEl.style.top = (e.clientY - dragState.offsetY) + 'px';
+            }
+
+            updateHoverTarget(e.clientX, e.clientY);
+        }
+
+        function beginDragVisual() {
+            dragState.dragging = true;
+            dragState.tileEl.classList.add('dragging-source');
+
+            const ghost = dragState.tileEl.cloneNode(true);
+            ghost.removeAttribute('id');
+            ghost.className = dragState.tileEl.className.replace('dragging-source', '') + ' drag-ghost';
+            ghost.style.width = dragState.width + 'px';
+            ghost.style.height = dragState.height + 'px';
+            ghost.style.left = (dragState.startX - dragState.offsetX) + 'px';
+            ghost.style.top = (dragState.startY - dragState.offsetY) + 'px';
+            document.body.appendChild(ghost);
+            dragState.ghostEl = ghost;
+        }
+
+        function findDropTarget(x, y) {
+            let el;
+            if (dragState && dragState.ghostEl) {
+                dragState.ghostEl.style.display = 'none';
+                el = document.elementFromPoint(x, y);
+                dragState.ghostEl.style.display = '';
+            } else {
+                el = document.elementFromPoint(x, y);
+            }
+            if (!el) return null;
+
+            const meldCard = el.closest('.meld-card');
+            if (meldCard && meldCard.dataset.meldId) return { type: 'meld', meldId: meldCard.dataset.meldId, el: meldCard };
+
+            const newMeldZone = el.closest('.new-meld-zone');
+            if (newMeldZone) return { type: 'newmeld', el: newMeldZone };
+
+            const rackArea = el.closest('#rack-area');
+            if (rackArea) return { type: 'rack', el: rackArea };
+
+            return null;
+        }
+
+        function updateHoverTarget(x, y) {
+            if (dragState.lastTarget && dragState.lastTarget.el) {
+                dragState.lastTarget.el.classList.remove('drag-over');
+            }
+            const target = findDropTarget(x, y);
+            dragState.lastTarget = target;
+            if (target && target.el) target.el.classList.add('drag-over');
+        }
+
+        function onDragPointerUp(e) {
+            if (!dragState) return;
+            const wasDragging = dragState.dragging;
+            const sourceType = dragState.sourceType;
+            const tile = dragState.tile;
+            const fromMeldId = dragState.meldId;
+            const target = wasDragging ? findDropTarget(e.clientX, e.clientY) : null;
+
+            cleanupDrag();
+
+            if (wasDragging) {
+                lastDragEndAt = Date.now();
+                if (target) dispatchTileDrop(sourceType, tile, fromMeldId, target);
+            }
+        }
+
+        function onDragPointerCancel() {
+            cleanupDrag();
+        }
+
+        function cleanupDrag() {
+            if (!dragState) return;
+            if (dragState.tileEl) {
+                dragState.tileEl.classList.remove('dragging-source');
+                dragState.tileEl.removeEventListener('pointermove', onDragPointerMove);
+                dragState.tileEl.removeEventListener('pointerup', onDragPointerUp);
+                dragState.tileEl.removeEventListener('pointercancel', onDragPointerCancel);
+            }
+            if (dragState.ghostEl && dragState.ghostEl.parentElement) {
+                dragState.ghostEl.parentElement.removeChild(dragState.ghostEl);
+            }
+            if (dragState.lastTarget && dragState.lastTarget.el) {
+                dragState.lastTarget.el.classList.remove('drag-over');
+            }
+            dragState = null;
+        }
+
+        // Routes a completed drop to the right existing (already-validated) action —
+        // rack drags reuse the same functions the buttons use, so network play, initial-meld
+        // tracking, and every existing rule check apply automatically with no new code paths.
+        function dispatchTileDrop(sourceType, tile, fromMeldId, target) {
+            if (sourceType === 'rack') {
+                const sel = getSelectedIds();
+                const payloadIds = (sel.has(tile.id) && sel.size > 1) ? [...sel] : [tile.id];
+                sel.clear();
+                payloadIds.forEach(id => sel.add(id));
+                renderRack();
+
+                if (target.type === 'newmeld') {
+                    laySelectedAsMeld();
+                } else if (target.type === 'meld') {
+                    tryAddSelectedToMeld(target.meldId);
+                }
+                // target.type === 'rack' (dropped back on your own rack) is a no-op / cancel
+            } else if (sourceType === 'table') {
+                if (target.type === 'meld') {
+                    moveTableTile(fromMeldId, tile.id, { type: 'meld', meldId: target.meldId });
+                } else if (target.type === 'rack') {
+                    moveTableTile(fromMeldId, tile.id, { type: 'rack' });
+                } else if (target.type === 'newmeld') {
+                    moveTableTile(fromMeldId, tile.id, { type: 'newmeld' });
+                }
+            }
+        }
+
+        // Given the tiles left behind in a meld after removing one, work out whether they still
+        // form one valid meld, can be split into two valid melds (only really applies to long
+        // runs — pulling a tile from the middle), or make the move illegal.
+        function trySplitMeld(tiles) {
+            if (tiles.length < 6) return null; // need at least 3 + 3 to split into two valid melds
+
+            const jokers = tiles.filter(t => t.isJoker);
+            const nonJokers = tiles.filter(t => !t.isJoker).sort((a, b) => a.value - b.value);
+            const jokerCount = jokers.length;
+
+            for (let k = 1; k < nonJokers.length; k++) {
+                const leftBase = nonJokers.slice(0, k);
+                const rightBase = nonJokers.slice(k);
+                for (let mask = 0; mask < (1 << jokerCount); mask++) {
+                    const left = [...leftBase];
+                    const right = [...rightBase];
+                    for (let j = 0; j < jokerCount; j++) {
+                        if (mask & (1 << j)) left.push(jokers[j]); else right.push(jokers[j]);
+                    }
+                    if (left.length >= 3 && right.length >= 3 && isValidMeld(left) && isValidMeld(right)) {
+                        return [left, right];
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Move a single tile that's currently on the table: onto another meld (must stay valid),
+        // back to your own rack (retract it), or reject the move if it would break its source meld.
+        function moveTableTile(fromMeldId, tileId, target) {
+            if (netState.mode === 'client') {
+                if (!isMyTurn()) return;
+                sendAction({ action: 'moveTableTile', fromMeldId, tileId, target });
+                return;
+            }
+
+            const currentPlayer = getCurrentPlayer();
+            if (!currentPlayer) return;
+
+            if (!currentPlayer.hasInitial) {
+                showToast('Make your own initial meld (30+ points) before manipulating melds on the table.', 'error');
+                return;
+            }
+
+            if (target.type === 'meld' && target.meldId === fromMeldId) return; // dropped on its own meld — no-op
+
+            const fromIdx = gameState.tableMelds.findIndex(m => m.id === fromMeldId);
+            if (fromIdx === -1) return;
+            const fromMeld = gameState.tableMelds[fromIdx];
+            const tile = fromMeld.tiles.find(t => t.id === tileId);
+            if (!tile) return;
+
+            const remaining = fromMeld.tiles.filter(t => t.id !== tileId);
+
+            // Work out what happens to the tiles left behind in the source meld
+            let sourceReplacement; // array of 0, 1, or 2 resulting tile-groups — or null if illegal
+            if (remaining.length === 0) {
+                sourceReplacement = [];
+            } else if (remaining.length >= 3 && isValidMeld(remaining)) {
+                sourceReplacement = [remaining];
+            } else {
+                sourceReplacement = trySplitMeld(remaining);
+            }
+
+            if (sourceReplacement === null) {
+                showToast("Can't move that tile — the rest of its meld would no longer be valid.", 'error');
+                return;
+            }
+
+            // Validate the destination before committing anything
+            if (target.type === 'meld') {
+                const toIdx = gameState.tableMelds.findIndex(m => m.id === target.meldId);
+                if (toIdx === -1) return;
+                const toMeld = gameState.tableMelds[toIdx];
+                const combined = [...toMeld.tiles, tile];
+                if (!isValidMeld(combined)) {
+                    showToast("Can't place that tile there — it wouldn't form a valid meld.", 'error');
+                    return;
+                }
+                toMeld.tiles = combined;
+            } else if (target.type === 'rack') {
+                currentPlayer.rack.push(tile);
+                currentPlayer.rack = sortTiles(currentPlayer.rack);
+            } else if (target.type === 'newmeld') {
+                showToast('A new meld needs at least 3 tiles — drag it onto an existing meld or back to your rack instead.', 'error');
+                return;
+            } else {
+                return;
+            }
+
+            // Apply the source-side result: the old meld is replaced by 0, 1, or 2 melds.
+            // Object identity for any meld this tile joined (toMeld, mutated above) is preserved
+            // regardless of how this splice shifts array indices.
+            const newMelds = sourceReplacement.map((meldTiles, i) => ({
+                id: i === 0 ? fromMeld.id : (fromMeld.id + '_split' + Date.now() + i),
+                tiles: meldTiles
+            }));
+            gameState.tableMelds.splice(fromIdx, 1, ...newMelds);
+
+            gameState.playedThisTurn = true;
+            clearSelection();
+            renderAll();
+            saveGameToLocalStorage();
         }
 
         function renderRack() {
@@ -1194,7 +1539,7 @@
             const isCrowded = sortedRack.length > 16;
             
             sortedRack.forEach(tile => {
-                const tileEl = createTileElement(tile, true);
+                const tileEl = createTileElement(tile, true, canDragFromRack() ? { sourceType: 'rack' } : null);
                 
                 if (isCrowded) {
                     // Make tiles smaller and allow better wrapping when rack is full
@@ -1220,22 +1565,13 @@
 
             // Always show New Meld Drop Zone at the top
             const newMeldZone = document.createElement('div');
-            newMeldZone.className = 'new-meld-zone mb-3';
+            newMeldZone.className = 'new-meld-zone';
             newMeldZone.innerHTML = `
                 <div class="text-center py-2">
                     <div class="font-semibold text-amber-300">Drop here to create new meld</div>
-                    <div class="text-[10px] text-white/50">Drag tiles from your rack</div>
+                    <div class="text-[10px] text-white/50">Drag 3+ tiles from your rack</div>
                 </div>
             `;
-            
-            // Drag & drop support for creating new meld
-            newMeldZone.ondragover = e => { e.preventDefault(); newMeldZone.classList.add('drag-over'); };
-            newMeldZone.ondragleave = () => newMeldZone.classList.remove('drag-over');
-            newMeldZone.ondrop = e => {
-                e.preventDefault();
-                newMeldZone.classList.remove('drag-over');
-                handleRackDropToNewMeld(e);
-            };
             container.appendChild(newMeldZone);
 
             if (melds.length === 0) {
@@ -1263,8 +1599,9 @@
 
             melds.forEach((meld, index) => {
                 const meldCard = document.createElement('div');
-                meldCard.className = `meld-card mb-3 last:mb-0 rounded-2xl p-3 cursor-pointer active:scale-[0.985] transition`;
+                meldCard.className = `meld-card rounded-2xl p-3 cursor-pointer active:scale-[0.985] transition`;
                 meldCard.title = "Click to add your selected tiles to this meld";
+                meldCard.dataset.meldId = meld.id;
                 
                 // Click to try adding selected rack tiles to this meld (only on your own turn)
                 meldCard.onclick = () => {
@@ -1285,7 +1622,7 @@
                 
                 const sortedTiles = sortTiles(meld.tiles);
                 sortedTiles.forEach(tile => {
-                    const tileEl = createTileElement(tile, false); // not in rack
+                    const tileEl = createTileElement(tile, false, canDragFromTable() ? { sourceType: 'table', meldId: meld.id } : null); // not in rack
                     // Make slightly smaller on table
                     tileEl.style.width = '2.65rem';
                     tileEl.style.height = '3.65rem';
@@ -2329,18 +2666,6 @@
             document.body.appendChild(modal);
         }
 
-        // Handle dropping rack tile(s) on the New Meld zone
-        function handleRackDropToNewMeld(e) {
-            if (!isMyTurn()) return;
-
-            if (getSelectedIds().size >= 3) {
-                laySelectedAsMeld();
-                return;
-            }
-
-            showToast("Select 3+ tiles from your rack first, then drag them to this zone to create a new meld.", "info");
-        }
-
         function showHelp() {
             hideGameMenu();
             const helpText = `RUMMIKUB RULES (v0.95 — Hotseat)
@@ -2355,6 +2680,7 @@
 • Empty your rack first = win!
 • Jokers are fully supported for forming/adding to melds in this version
 • Steal a joker from a table meld: tap the pulsing joker once you have your own initial meld and a matching tile in your rack — it swaps in for you
+• Drag & drop: drag rack tiles onto "Drop here" to form a new meld, or onto an existing meld to add to it. Once you have your own initial meld, you can also drag tiles already on the table — onto another meld, or back to your own rack. A meld will split in two if you pull a tile out of the middle of a long run and both halves are still valid; moves that would leave an invalid meld behind are rejected
 
 Hotseat only (pass the iPad). More manipulation & joker stealing coming soon.
 
