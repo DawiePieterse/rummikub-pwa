@@ -1603,12 +1603,7 @@
             clearSelection();
             renderAll();
             updateTurnStatus('Drew 1 tile. Your turn is now over — pass to the next player.');
-            updateButtonStates();
 
-            // Auto end turn after draw? For simplicity, let player press End Turn
-            // But many digital versions auto-end after draw.
-            // For now, require End Turn press.
-            
             saveGameToLocalStorage();
         }
 
@@ -1685,6 +1680,15 @@
             // Render new player's view
             renderAll();
             updateTurnStatus('');
+        }
+
+        // Silently re-sorts the acting player's rack in place (no re-render of its own —
+        // callers always follow up with renderAll()). Referenced by drawTile() and
+        // laySelectedAsMeld() but was missing from the original file.
+        function autoSortCurrentRack() {
+            const player = getCurrentPlayer();
+            if (!player) return;
+            player.rack = sortTiles(player.rack);
         }
 
         function sortRack() {
