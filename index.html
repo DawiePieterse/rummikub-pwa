@@ -1674,7 +1674,8 @@
             if (!currentPlayer) return;
 
             // If they haven't made their initial meld yet, any melds placed this turn
-            // don't count on their own — return them to the rack — then a draw is required.
+            // don't count on their own — return them to the rack — then a draw is required
+            // (unless they've already played or drawn something this turn already).
             if (!currentPlayer.hasInitial) {
                 const hadPendingMelds = revertTurnMelds(currentPlayer);
 
@@ -1686,16 +1687,25 @@
                         showToast(msg, 'error');
                     }
                     gameState.initialPointsThisTurn = 0;
-                } else if (netState.mode === 'solo') {
-                    if (!confirm('You have not made your initial meld (30+ points). Draw a tile to end your turn?')) {
-                        return;
+
+                    if (gameState.pool.length > 0) {
+                        const drawn = gameState.pool.shift();
+                        currentPlayer.rack.push(drawn);
+                    }
+                } else if (!gameState.playedThisTurn) {
+                    // Haven't played AND haven't drawn yet this turn — a draw is required
+                    if (netState.mode === 'solo') {
+                        if (!confirm('You have not made your initial meld (30+ points). Draw a tile to end your turn?')) {
+                            return;
+                        }
+                    }
+                    if (gameState.pool.length > 0) {
+                        const drawn = gameState.pool.shift();
+                        currentPlayer.rack.push(drawn);
                     }
                 }
-
-                if (gameState.pool.length > 0) {
-                    const drawn = gameState.pool.shift();
-                    currentPlayer.rack.push(drawn);
-                }
+                // else: no pending melds and playedThisTurn is already true (they already
+                // drew this turn) — nothing more to do, just proceed to end the turn.
             } else if (!gameState.playedThisTurn) {
                 // Already has initial, but played nothing this turn → must draw
                 if (gameState.pool.length > 0) {
