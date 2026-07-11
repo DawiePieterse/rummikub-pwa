@@ -1246,6 +1246,21 @@
                 document.getElementById('table-meld-count').textContent = `${melds.length} meld${melds.length > 1 ? 's' : ''}`;
             }
 
+            // Figure out the viewer's own rack + initial-meld status, so we can tell
+            // which jokers on the table (if any) they're currently allowed to steal.
+            let myRackForSteal = [];
+            let myHasInitial = false;
+            if (netState.mode === 'client') {
+                myRackForSteal = clientView ? clientView.myRack : [];
+                const me = clientView && clientView.players ? clientView.players[clientView.myIndex] : null;
+                myHasInitial = me ? me.hasInitial : false;
+            } else {
+                const mine = getMyPlayer();
+                myRackForSteal = mine ? mine.rack : [];
+                myHasInitial = mine ? mine.hasInitial : false;
+            }
+            const canStealRightNow = isMyTurn() && myHasInitial;
+
             melds.forEach((meld, index) => {
                 const meldCard = document.createElement('div');
                 meldCard.className = `meld-card mb-3 last:mb-0 rounded-2xl p-3 cursor-pointer active:scale-[0.985] transition`;
@@ -1275,6 +1290,19 @@
                     tileEl.style.width = '2.65rem';
                     tileEl.style.height = '3.65rem';
                     tileEl.style.fontSize = '1.05rem';
+
+                    // A joker can be stolen (swapped for a rack tile that keeps the meld
+                    // valid) once you've made your own initial meld, on your own turn.
+                    if (tile.isJoker && canStealRightNow && canStealJoker(meld.tiles, tile, myRackForSteal)) {
+                        tileEl.classList.add('joker-stealable');
+                        tileEl.style.cursor = 'pointer';
+                        tileEl.title = 'Tap to steal this joker (swaps it for a matching tile from your rack)';
+                        tileEl.onclick = (e) => {
+                            e.stopPropagation(); // don't also trigger the meld-card's add-to-meld click
+                            stealJoker(meld.id, tile.id);
+                        };
+                    }
+
                     tilesRow.appendChild(tileEl);
                 });
                 
@@ -2326,6 +2354,7 @@
 • If you can't/won't play valid tiles: Draw 1 from the pool
 • Empty your rack first = win!
 • Jokers are fully supported for forming/adding to melds in this version
+• Steal a joker from a table meld: tap the pulsing joker once you have your own initial meld and a matching tile in your rack — it swaps in for you
 
 Hotseat only (pass the iPad). More manipulation & joker stealing coming soon.
 
