@@ -466,19 +466,19 @@
                 
                 <button onclick="laySelectedAsMeld()" 
                         id="btn-lay-meld"
-                        class="col-span-2 sm:col-span-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-emerald-900/50 disabled:text-white/40 transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2 shadow">
+                        class="col-span-2 sm:col-span-1 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-emerald-900/50 disabled:text-white/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2 shadow">
                     <span>Play Selected<br><span class="text-[10px] opacity-75">as Valid Meld</span></span>
                 </button>
                 
                 <button onclick="drawTile()" 
                         id="btn-draw"
-                        class="py-3.5 px-4 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 disabled:bg-sky-900/50 transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2">
+                        class="py-3.5 px-4 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 disabled:bg-sky-900/40 disabled:text-white/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2">
                     <span>Draw Tile</span>
                 </button>
                 
                 <button onclick="endTurn()" 
                         id="btn-end-turn"
-                        class="col-span-2 sm:col-span-1 py-3.5 px-5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold transition-all rounded-2xl text-sm flex items-center justify-center gap-x-2 shadow">
+                        class="col-span-2 sm:col-span-1 py-3.5 px-5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:bg-amber-900/30 disabled:text-white/30 disabled:cursor-not-allowed disabled:shadow-none text-white font-bold transition-all rounded-2xl text-sm flex items-center justify-center gap-x-2 shadow">
                     <span>End Turn &amp; Pass</span>
                 </button>
                 
@@ -577,7 +577,19 @@
             gameStarted: false,
             selectedTileIds: new Set(),
             heldTableTile: null,   // for move/split operations
-            selectedMeldForAction: null
+            selectedMeldForAction: null,
+            // These were previously never initialized, which caused two real bugs:
+            // (1) initialPointsThisTurn being undefined made the very first initial-meld
+            //     attempt of a fresh game compute NaN (undefined + number), so the
+            //     30-point badge could never be satisfied on turn 1.
+            // (2) cumulativeScores/matchHistory being undefined made endGame() throw as
+            //     soon as anyone actually won a solo game, crashing the win screen.
+            initialPointsThisTurn: 0,
+            hasDrawnThisTurn: false,
+            turnMeldIds: [],        // meld ids created this turn while initial meld was still pending
+            cumulativeScores: {},
+            matchHistory: [],
+            roundNumber: 1
         };
 
         let allTiles = []; // master list for reference
@@ -745,6 +757,7 @@
             gameState.playedThisTurn = false;
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0;
+            gameState.turnMeldIds = [];
             gameState.selectedTileIds = new Set();
             gameState.cumulativeScores = gameState.cumulativeScores || {};
             gameState.matchHistory = gameState.matchHistory || [];
@@ -1077,6 +1090,11 @@
 
             const currentPlayer = getCurrentPlayer();
             if (!currentPlayer) return;
+
+            if (!currentPlayer.hasInitial) {
+                showToast('Make your own initial meld (30+ points) before manipulating melds on the table.', 'error');
+                return;
+            }
 
             const meldIndex = gameState.tableMelds.findIndex(m => m.id === meldId);
             if (meldIndex === -1) return;
@@ -1475,6 +1493,10 @@
                 return;
             }
 
+            // Remember whether initial was still pending BEFORE this meld, so we know
+            // whether this meld needs to be reverted if the turn ends short of 30 points.
+            const wasInitialPending = !currentPlayer.hasInitial;
+
             // Initial meld progress (can be achieved over multiple melds in one turn)
             if (!currentPlayer.hasInitial) {
                 const pointsThisMeld = calculateInitialPoints(selectedTiles);
@@ -1497,6 +1519,12 @@
                 tiles: selectedTiles
             };
             gameState.tableMelds.push(newMeld);
+
+            // If initial is still not met after this meld, remember it so endTurn() can
+            // return it to the rack if the player ends their turn without reaching 30.
+            if (wasInitialPending) {
+                gameState.turnMeldIds.push(newMeld.id);
+            }
 
             // Update rack
             currentPlayer.rack = remainingRack;
@@ -1537,6 +1565,12 @@
             const currentPlayer = getCurrentPlayer();
             if (!currentPlayer || gameState.selectedTileIds.size === 0) {
                 updateTurnStatus('Select tiles from your rack first, then click a meld to add them.');
+                return;
+            }
+
+            // You can't touch melds already on the table until your own initial meld is done
+            if (!currentPlayer.hasInitial) {
+                showToast('Make your own initial meld (30+ points) before adding to melds on the table.', 'error');
                 return;
             }
 
@@ -1607,6 +1641,28 @@
             saveGameToLocalStorage();
         }
 
+        // Returns any melds this player created this turn while still working toward
+        // their initial meld back to their rack. Called when a turn ends without
+        // reaching the 30-point initial requirement — per the rules, none of those
+        // melds are valid on their own and can't be left on the table.
+        function revertTurnMelds(player) {
+            if (!gameState.turnMeldIds || gameState.turnMeldIds.length === 0) return false;
+
+            let reverted = false;
+            gameState.turnMeldIds.forEach(meldId => {
+                const idx = gameState.tableMelds.findIndex(m => m.id === meldId);
+                if (idx !== -1) {
+                    const meld = gameState.tableMelds[idx];
+                    player.rack.push(...meld.tiles);
+                    gameState.tableMelds.splice(idx, 1);
+                    reverted = true;
+                }
+            });
+            gameState.turnMeldIds = [];
+            player.rack = sortTiles(player.rack);
+            return reverted;
+        }
+
         function endTurn() {
             if (netState.mode === 'client') {
                 if (!isMyTurn()) return;
@@ -1617,21 +1673,31 @@
             const currentPlayer = getCurrentPlayer();
             if (!currentPlayer) return;
 
-            // If they haven't played anything and haven't done initial, force draw or block
-            if (!currentPlayer.hasInitial && !gameState.playedThisTurn) {
-                const shouldDraw = netState.mode === 'solo'
-                    ? confirm('You have not made your initial meld (30+ points). Do you want to draw a tile instead?')
-                    : true; // networked: auto-draw instead of showing a confirm on the wrong device
-                if (shouldDraw) {
-                    if (gameState.pool.length > 0) {
-                        const drawn = gameState.pool.shift();
-                        currentPlayer.rack.push(drawn);
+            // If they haven't made their initial meld yet, any melds placed this turn
+            // don't count on their own — return them to the rack — then a draw is required.
+            if (!currentPlayer.hasInitial) {
+                const hadPendingMelds = revertTurnMelds(currentPlayer);
+
+                if (hadPendingMelds) {
+                    const msg = `Initial meld needs 30+ points (you had ${gameState.initialPointsThisTurn}) — those tiles were returned to your rack.`;
+                    if (netState.mode === 'solo') {
+                        alert(msg);
+                    } else {
+                        showToast(msg, 'error');
                     }
-                } else {
-                    return;
+                    gameState.initialPointsThisTurn = 0;
+                } else if (netState.mode === 'solo') {
+                    if (!confirm('You have not made your initial meld (30+ points). Draw a tile to end your turn?')) {
+                        return;
+                    }
                 }
-            } else if (!gameState.playedThisTurn && currentPlayer.hasInitial) {
-                // Did not play any tile this turn → must draw
+
+                if (gameState.pool.length > 0) {
+                    const drawn = gameState.pool.shift();
+                    currentPlayer.rack.push(drawn);
+                }
+            } else if (!gameState.playedThisTurn) {
+                // Already has initial, but played nothing this turn → must draw
                 if (gameState.pool.length > 0) {
                     const drawn = gameState.pool.shift();
                     currentPlayer.rack.push(drawn);
@@ -1654,6 +1720,7 @@
             gameState.playedThisTurn = false;
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0; // Reset initial meld progress for next player
+            gameState.turnMeldIds = [];
             gameState.selectedTileIds.clear();
             gameState.heldTableTile = null;
 
@@ -1757,8 +1824,17 @@
             gameState.currentPlayerIndex = 0;
             gameState.tableMelds = [];
             gameState.playedThisTurn = false;
+            gameState.hasDrawnThisTurn = false;
+            gameState.initialPointsThisTurn = 0;
+            gameState.turnMeldIds = [];
             gameState.selectedTileIds = new Set();
             gameState.gameStarted = true;
+            // A brand new game (possibly with different players) starts a fresh match tally.
+            // Use the dedicated "Reset cumulative scores" menu action to clear scores
+            // mid-match instead; this path is only for starting over completely.
+            gameState.cumulativeScores = {};
+            gameState.matchHistory = [];
+            gameState.roundNumber = 1;
 
             // Generate and deal tiles
             const tiles = generateAllTiles();
@@ -1923,6 +1999,7 @@
             gameState.playedThisTurn = false;
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0;
+            gameState.turnMeldIds = [];
             gameState.selectedTileIds = new Set();
             clientSelectedTileIds.clear();
             gameState.roundNumber = (gameState.roundNumber || 1) + 1;
@@ -1972,6 +2049,9 @@
             gameState.currentPlayerIndex = 0;
             gameState.tableMelds = [];
             gameState.playedThisTurn = false;
+            gameState.hasDrawnThisTurn = false;
+            gameState.initialPointsThisTurn = 0;
+            gameState.turnMeldIds = [];
             gameState.selectedTileIds = new Set();
 
             const tiles = generateAllTiles();
@@ -2002,6 +2082,12 @@
                     tableMelds: gameState.tableMelds,
                     pool: gameState.pool,
                     playedThisTurn: gameState.playedThisTurn,
+                    hasDrawnThisTurn: gameState.hasDrawnThisTurn,
+                    initialPointsThisTurn: gameState.initialPointsThisTurn,
+                    turnMeldIds: gameState.turnMeldIds,
+                    cumulativeScores: gameState.cumulativeScores,
+                    matchHistory: gameState.matchHistory,
+                    roundNumber: gameState.roundNumber,
                     gameStarted: true
                 };
                 localStorage.setItem('rummikubGameState', JSON.stringify(serializable));
@@ -2024,6 +2110,12 @@
                 gameState.tableMelds = parsed.tableMelds || [];
                 gameState.pool = parsed.pool || [];
                 gameState.playedThisTurn = parsed.playedThisTurn || false;
+                gameState.hasDrawnThisTurn = parsed.hasDrawnThisTurn || false;
+                gameState.initialPointsThisTurn = parsed.initialPointsThisTurn || 0;
+                gameState.turnMeldIds = parsed.turnMeldIds || [];
+                gameState.cumulativeScores = parsed.cumulativeScores || {};
+                gameState.matchHistory = parsed.matchHistory || [];
+                gameState.roundNumber = parsed.roundNumber || 1;
                 gameState.gameStarted = true;
                 gameState.selectedTileIds = new Set();
 
