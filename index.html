@@ -730,6 +730,7 @@
             oneTileWarning: null,   // { seq, playerName } — broadcast to everyone when a rack drops to 1 tile
             turnTimerSeconds: 30,   // 0 = off; chosen at game start, persists for the match
             turnDeadline: null,     // Date.now() timestamp the current turn expires at, or null if timer is off
+            lastActionSound: null,  // { seq, sound } — broadcast so every client hears game sounds too, not just the host
             tileVariant: 'standard', // 'standard' (106 tiles, 2-4 players) or 'xp' (160 tiles, 5-6 players)
             pendingJokerRetrieval: null, // set when a joker is stolen; must be replayed this turn or it's undone
             cumulativeScores: {},
@@ -1043,6 +1044,9 @@
                 if (firstTime && clientView.gameStarted) {
                     document.getElementById('join-screen').classList.add('hidden');
                     document.getElementById('game-screen').classList.remove('hidden');
+                    // Establish a baseline so joining mid-game doesn't immediately play a sound
+                    // for something that already happened before this device connected.
+                    netState.lastPlayedActionSoundSeq = clientView.lastActionSound ? clientView.lastActionSound.seq : 0;
                 }
 
                 renderAll();
@@ -1050,12 +1054,21 @@
                 if (clientView.winner && clientView.winner.seq !== netState.lastShownWinSeq) {
                     netState.lastShownWinSeq = clientView.winner.seq;
                     showWinFromPayload(clientView.winner);
+                    playSound('win');
                 }
 
                 if (clientView.oneTileWarning && clientView.oneTileWarning.seq !== netState.lastShownOneTileSeq) {
                     netState.lastShownOneTileSeq = clientView.oneTileWarning.seq;
                     showToast(`⚠️ ${clientView.oneTileWarning.playerName} has only ONE tile left!`, 'warning');
                     playSound('oneTile');
+                }
+
+                // General game-action sounds (meld played, drew a tile, turn passed, joker
+                // stolen, turn recalled) — broadcast by the host so every client hears them too,
+                // not just whichever device actually performed the action.
+                if (clientView.lastActionSound && clientView.lastActionSound.seq !== netState.lastPlayedActionSoundSeq) {
+                    netState.lastPlayedActionSoundSeq = clientView.lastActionSound.seq;
+                    playSound(clientView.lastActionSound.sound);
                 }
             }
         }
@@ -1108,6 +1121,7 @@
                 newlyPlacedTileIds: gameState.newlyPlacedTileIds,
                 hasPendingJokerRetrieval: !!(gameState.pendingJokerRetrieval && index === gameState.currentPlayerIndex),
                 oneTileWarning: gameState.oneTileWarning,
+                lastActionSound: gameState.lastActionSound,
                 turnDeadline: gameState.turnDeadline,
                 winner: gameState.lastWinnerPayload || null
             };
@@ -1350,13 +1364,17 @@
             return netState.mode === 'client' ? (clientView ? clientView.turnDeadline : null) : gameState.turnDeadline;
         }
 
+        function isGameActiveForDisplay() {
+            return netState.mode === 'client' ? !!(clientView && clientView.gameStarted) : gameState.gameStarted;
+        }
+
         function updateTurnTimerDisplay() {
             const badge = document.getElementById('turn-timer-badge');
             const valueEl = document.getElementById('turn-timer-value');
             if (!badge || !valueEl) return;
 
             const deadline = getActiveTurnDeadline();
-            if (!deadline || !gameState.gameStarted) {
+            if (!deadline || !isGameActiveForDisplay()) {
                 badge.classList.add('hidden');
                 badge.classList.remove('flex');
                 return;
@@ -1504,6 +1522,7 @@
             };
 
             showToast("Joker stolen! You replaced it with your tile. Play the joker before ending your turn.", "success");
+            broadcastActionSound('joker');
             renderAll();
             playSound('joker');
             saveGameToLocalStorage();
@@ -1900,6 +1919,7 @@
 
             gameState.playedThisTurn = true;
             clearSelection();
+            broadcastActionSound('place');
             renderAll();
             playSound('place');
             saveGameToLocalStorage();
@@ -2267,6 +2287,15 @@
             osc.stop(ctx.currentTime + startTime + duration + 0.02);
         }
 
+        // Queues a sound to be broadcast in the next state update, so every connected client
+        // hears it too — not just whichever device (host/solo) actually executed the action.
+        // Only meaningful in networked play; solo mode already hears everything locally.
+        function broadcastActionSound(name) {
+            if (netState.mode === 'solo') return;
+            gameState.actionSoundSeq = (gameState.actionSoundSeq || 0) + 1;
+            gameState.lastActionSound = { seq: gameState.actionSoundSeq, sound: name };
+        }
+
         function playSound(name, param) {
             if (!isSoundEnabled()) return;
             if (!getAudioContext()) return;
@@ -2513,6 +2542,7 @@
             checkOneTileWarning(currentPlayer);
 
             autoSortCurrentRack();
+            broadcastActionSound('place');
             renderAll();
             playSound('place');
             const meldType = getMeldType(selectedTiles);
@@ -2604,6 +2634,7 @@
             }
             checkOneTileWarning(currentPlayer);
 
+            broadcastActionSound('place');
             renderAll();
             playSound('place');
             updateTurnStatus('Tiles successfully added to meld!');
@@ -2630,6 +2661,7 @@
 
             autoSortCurrentRack();
             clearSelection();
+            broadcastActionSound('draw');
             renderAll();
             playSound('draw');
 
@@ -2713,6 +2745,7 @@
 
             restoreFromSnapshot(snap);
 
+            broadcastActionSound('undo');
             renderAll();
             playSound('undo');
             updateTurnStatus('Turn recalled — back to how the board was when your turn started.');
@@ -2815,6 +2848,7 @@
 
             captureTurnSnapshot();
             playSound('turn');
+            broadcastActionSound('turn');
 
             if (netState.mode === 'solo') {
                 // Show pass modal - physically hand the device to the next player. Timer doesn't
