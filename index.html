@@ -162,6 +162,13 @@
             border-color: rgba(10, 132, 255, 0.5);
         }
 
+        /* An in-progress manipulation left this meld not (yet) valid — dashed orange border as a
+           clear "not finished" cue. The turn can't end until it's fixed or Recall Turn is used. */
+        .meld-card.incomplete {
+            border: 2px dashed rgba(255, 149, 0, 0.7);
+            background: rgba(255, 149, 0, 0.06);
+        }
+
         .rack-container {
             scrollbar-width: thin;
             scrollbar-color: #0A84FF #E5E5EA;
@@ -1243,6 +1250,10 @@
             return mergedAny;
         }
 
+        function isBoardFullyValid() {
+            return gameState.tableMelds.every(m => isValidMeld(m.tiles));
+        }
+
         // Calculate points for initial meld, giving jokers reasonable value
         function calculateInitialPoints(tiles) {
             if (!isValidMeld(tiles)) return 0;
@@ -1669,53 +1680,37 @@
 
             const remaining = fromMeld.tiles.filter(t => t.id !== tileId);
 
-            // Work out what happens to the tiles left behind in the source meld
-            let sourceReplacement; // array of 0, 1, or 2 resulting tile-groups — or null if illegal
+            // Real Rummikub manipulation lets you freely pick apart and rebuild the table across
+            // several moves — a meld can sit below 3 tiles, or otherwise invalid, in between steps.
+            // Nothing here blocks that; the whole board only needs to be valid again once the turn
+            // actually ends (see the check in endTurn()). If it isn't, the turn can't be ended and
+            // Recall Turn is always available to undo everything back to how it started.
+            let sourceReplacement; // 0 or 1 resulting tile-group (kept as-is, valid or not)
             if (remaining.length === 0) {
                 sourceReplacement = [];
-            } else if (remaining.length >= 3 && isValidMeld(remaining)) {
-                sourceReplacement = [remaining];
             } else {
-                sourceReplacement = trySplitMeld(remaining);
+                sourceReplacement = [remaining];
             }
 
-            if (sourceReplacement === null) {
-                showToast("Can't move that tile — the rest of its meld would no longer be valid.", 'error');
-                return;
-            }
-
-            // Validate the destination before committing anything
             let destReplacement = null; // only set for target.type === 'meld'
-            let toIdx = -1;
             if (target.type === 'meld') {
-                toIdx = gameState.tableMelds.findIndex(m => m.id === target.meldId);
-                if (toIdx === -1) return;
-                const toMeld = gameState.tableMelds[toIdx];
-                const combined = [...toMeld.tiles, tile];
-                if (isValidMeld(combined)) {
-                    destReplacement = [combined];
-                } else {
-                    // As with adding from the rack, inserting into a run can legally split it in two
-                    const split = trySplitMeld(combined);
-                    if (!split) {
-                        showToast("Can't place that tile there — it wouldn't form a valid meld.", 'error');
-                        return;
-                    }
-                    destReplacement = split;
-                }
+                const toMeld = gameState.tableMelds.find(m => m.id === target.meldId);
+                if (!toMeld) return;
+                destReplacement = [[...toMeld.tiles, tile]];
             } else if (target.type === 'rack') {
                 currentPlayer.rack.push(tile);
                 currentPlayer.rack = sortTiles(currentPlayer.rack);
             } else if (target.type === 'newmeld') {
-                showToast('A new meld needs at least 3 tiles — drag it onto an existing meld or back to your rack instead.', 'error');
-                return;
+                // Starts a new (possibly still-incomplete) meld — fine, it just needs to be a
+                // real meld by the time the turn ends.
+                destReplacement = [[tile]];
             } else {
                 return;
             }
 
             // Rebuild tableMelds: drop the source meld (and destination meld, if any), then add
             // back whatever resulted on each side. Doing this as one rebuild — rather than two
-            // sequential splices — avoids index-shifting bugs when either side splits in two.
+            // sequential splices — avoids index-shifting bugs.
             const dropIds = new Set([fromMeldId]);
             if (target.type === 'meld') dropIds.add(target.meldId);
 
@@ -1728,7 +1723,7 @@
 
             let destMelds = [];
             if (destReplacement) {
-                const destOriginalId = target.meldId;
+                const destOriginalId = target.type === 'meld' ? target.meldId : ('meld_' + Date.now());
                 destMelds = destReplacement.map((meldTiles, i) => ({
                     id: i === 0 ? destOriginalId : (destOriginalId + '_split' + Date.now() + i + 'b'),
                     tiles: meldTiles
@@ -1739,7 +1734,7 @@
 
             // Glow the moved tile for everyone until this player's turn ends (only relevant if
             // it landed in a meld — a tile retracted to the rack isn't on the board to glow)
-            if (target.type === 'meld') {
+            if (target.type === 'meld' || target.type === 'newmeld') {
                 gameState.newlyPlacedTileIds.push(tile.id);
             }
 
@@ -1884,8 +1879,11 @@
                 lastType = meldInfo.type;
 
                 const meldCard = document.createElement('div');
-                meldCard.className = `meld-card rounded-2xl p-2 cursor-pointer active:scale-[0.985] transition`;
-                meldCard.title = "Click to add your selected tiles to this meld";
+                const isIncomplete = !isValidMeld(meld.tiles);
+                meldCard.className = `meld-card rounded-2xl p-2 cursor-pointer active:scale-[0.985] transition${isIncomplete ? ' incomplete' : ''}`;
+                meldCard.title = isIncomplete
+                    ? "Not a valid meld yet — keep rearranging, or use Recall Turn to undo everything"
+                    : "Click to add your selected tiles to this meld";
                 meldCard.dataset.meldId = meld.id;
                 
                 // Click to try adding selected rack tiles to this meld (only on your own turn)
@@ -2045,6 +2043,7 @@
         // Synthesized via the Web Audio API rather than bundled audio files, so everything stays
         // in this one HTML file and still works fully offline.
         let audioCtx = null;
+        let audioUnlocked = false;
 
         function getAudioContext() {
             if (!audioCtx) {
@@ -2054,13 +2053,35 @@
                     return null; // Web Audio unsupported — sounds just silently no-op
                 }
             }
-            // iOS/Safari suspend the context until a user gesture resumes it; every sound here
-            // is already triggered by a tap, so this reliably unlocks it on first play.
             if (audioCtx.state === 'suspended') {
                 audioCtx.resume().catch(() => {});
             }
             return audioCtx;
         }
+
+        // iOS Safari (and some other mobile browsers) won't let a page play any audio at all
+        // until it's explicitly unlocked by a real, synchronous user gesture — and that unlock
+        // needs an actual sound scheduled during the gesture itself, not just context.resume().
+        // This runs once on the very first tap/click anywhere on the page, well before any game
+        // sound is needed, so by the time one actually plays the context is already running.
+        function unlockAudioOnFirstInteraction() {
+            if (audioUnlocked) return;
+            audioUnlocked = true;
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            try {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                gain.gain.setValueAtTime(0.0001, ctx.currentTime); // effectively silent primer tone
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.05);
+            } catch (e) { /* ignore — worst case, the lazy unlock in getAudioContext() still applies */ }
+        }
+        ['pointerdown', 'touchstart', 'click'].forEach(evt => {
+            document.addEventListener(evt, unlockAudioOnFirstInteraction, { once: true, capture: true });
+        });
 
         function isSoundEnabled() {
             return localStorage.getItem('rummikubSound') !== 'false';
@@ -2519,6 +2540,19 @@
 
             const currentPlayer = getCurrentPlayer();
             if (!currentPlayer) return;
+
+            // If manipulating the table left an incomplete/invalid meld behind, the turn can't
+            // end yet — per the rules, only legitimate sets may remain on the table. Recall Turn
+            // is always available as an escape hatch if they want to undo everything instead.
+            if (!isBoardFullyValid()) {
+                const msg = "Not so fast — some melds on the table aren't valid yet. Finish rearranging them, or use Recall Turn to undo everything.";
+                if (netState.mode === 'solo') {
+                    alert(msg);
+                } else {
+                    showToast(msg, 'error');
+                }
+                return;
+            }
 
             // Official rule: a joker retrieved from the table must be replayed into a set this
             // same turn. If that never happened, undo the whole retrieval before anything else.
