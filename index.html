@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Rummikub">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#F2F2F7">
     <title>Rummikub PWA • 2-4 Players</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
-    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Rummikub%20PWA%22%2C%22short_name%22%3A%22Rummikub%22%2C%22description%22%3A%22Play%20Rummikub%20with%202-4%20players%20over%20WiFi%20on%20separate%20iPads%2C%20or%20pass-and-play%20on%20one%20device.%22%2C%22start_url%22%3A%22.%2Findex.html%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23000000%22%2C%22theme_color%22%3A%22%230A84FF%22%2C%22orientation%22%3A%22landscape%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20100%20100%27%253E%253Crect%20width%3D%27100%27%20height%3D%27100%27%20rx%3D%2722%27%20fill%3D%27%25230A84FF%27%2F%253E%253Ctext%20x%3D%2750%27%20y%3D%2766%27%20font-size%3D%2752%27%20font-family%3D%27-apple-system%2Csystem-ui%27%20font-weight%3D%27800%27%20text-anchor%3D%27middle%27%20fill%3D%27white%27%253ER%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Rummikub%20PWA%22%2C%22short_name%22%3A%22Rummikub%22%2C%22description%22%3A%22Play%20Rummikub%20with%202-4%20players%20over%20WiFi%20on%20separate%20iPads%2C%20or%20pass-and-play%20on%20one%20device.%22%2C%22start_url%22%3A%22.%2Findex.html%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F2F2F7%22%2C%22theme_color%22%3A%22%230A84FF%22%2C%22orientation%22%3A%22landscape%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20100%20100%27%253E%253Crect%20width%3D%27100%27%20height%3D%27100%27%20rx%3D%2722%27%20fill%3D%27%25230A84FF%27%2F%253E%253Ctext%20x%3D%2750%27%20y%3D%2766%27%20font-size%3D%2752%27%20font-family%3D%27-apple-system%2Csystem-ui%27%20font-weight%3D%27800%27%20text-anchor%3D%27middle%27%20fill%3D%27white%27%253ER%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
     <script>
         // Tailwind color scale overrides — remaps the named colors already used
         // throughout the markup (amber, emerald, sky, red, yellow, zinc, violet,
@@ -20,10 +20,10 @@
             theme: {
                 extend: {
                     colors: {
-                        amber:   { 100:'#D6ECFF', 200:'#AEDBFF', 300:'#7FC3FF', 400:'#409CFF', 500:'#0A84FF', 600:'#0071E3', 700:'#0059B3', 800:'#0A2A4D', 900:'#0A2A4D' },
-                        emerald: { 100:'#C8F7D4', 300:'#6FE39B', 400:'#30D158', 500:'#27AE4E', 600:'#1F9C46', 700:'#17853A', 900:'#0C3D1E' },
-                        sky:     { 500:'#7A79F5', 600:'#5E5CE6', 700:'#4A48C4', 900:'#221F5C' },
-                        red:     { 100:'#FFD9D6', 400:'#FF6961', 600:'#FF453A', 700:'#D70015', 900:'#3A0906' },
+                        amber:   { 100:'#EAF3FF', 200:'#0B5FBF', 300:'#0071E3', 400:'#0071E3', 500:'#0A84FF', 600:'#0071E3', 700:'#0059B3', 800:'#D6ECFF', 900:'#D6ECFF' },
+                        emerald: { 100:'#E3F9E9', 300:'#17853A', 400:'#30D158', 500:'#27AE4E', 600:'#1F9C46', 700:'#17853A', 900:'#E3F9E9' },
+                        sky:     { 500:'#7A79F5', 600:'#5E5CE6', 700:'#4A48C4', 900:'#E7E6FB' },
+                        red:     { 100:'#FFD9D6', 400:'#D70015', 600:'#FF453A', 700:'#D70015', 900:'#3A0906' },
                         yellow:  { 400:'#FFD60A', 500:'#E6C200' },
                         zinc:    { 900:'#1C1C1E', 950:'#0B0B0D' },
                         violet:  { 700:'#8944D6', 900:'#3B1A66' },
@@ -37,8 +37,8 @@
     </script>
     <style>
         :root {
-            --wood: #1C1C1E;
-            --felt: #121214;
+            --wood: #FFFFFF;
+            --felt: #EDEDF2;
             --accent: #0A84FF;
         }
 
@@ -54,7 +54,7 @@
         }
 
         .game-container {
-            background: linear-gradient(180deg, #1C1C1E 0%, #000000 55%);
+            background: linear-gradient(180deg, #FAFAFC 0%, #EFEFF4 100%);
             height: 100dvh; /* fixed, not min-height — content must scroll within, never push the
                                 action buttons below the viewport (body is overflow:hidden) */
         }
@@ -103,17 +103,17 @@
 
         /* Frosted-glass surface used for panels, headers, and cards */
         .glass {
-            background: rgba(28, 28, 30, 0.72);
+            background: rgba(255, 255, 255, 0.72);
             backdrop-filter: blur(24px) saturate(180%);
             -webkit-backdrop-filter: blur(24px) saturate(180%);
         }
 
         .table-felt {
-            background: #0E0E10;
+            background: #E9E9EE;
             background-image:
-                radial-gradient(circle at 25% 20%, rgba(10, 132, 255, 0.10) 0%, transparent 55%),
-                radial-gradient(circle at 80% 80%, rgba(191, 90, 242, 0.08) 0%, transparent 55%);
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), inset 0 0 60px rgba(0,0,0,0.5);
+                radial-gradient(circle at 25% 20%, rgba(10, 132, 255, 0.07) 0%, transparent 55%),
+                radial-gradient(circle at 80% 80%, rgba(191, 90, 242, 0.06) 0%, transparent 55%);
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06), inset 0 0 30px rgba(0,0,0,0.04);
         }
 
         .tile {
@@ -143,10 +143,11 @@
         }
 
         .meld-card {
-            background: rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.9);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.10);
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
             transition: all 0.2s ease;
         }
 
@@ -156,7 +157,7 @@
 
         .rack-container {
             scrollbar-width: thin;
-            scrollbar-color: #0A84FF #2C2C2E;
+            scrollbar-color: #0A84FF #E5E5EA;
         }
 
         .section-title {
@@ -174,10 +175,10 @@
         }
 
         .wood-header {
-            background: rgba(28, 28, 30, 0.78);
+            background: rgba(255, 255, 255, 0.82);
             backdrop-filter: blur(24px) saturate(180%);
             -webkit-backdrop-filter: blur(24px) saturate(180%);
-            box-shadow: 0 1px 0 rgba(255,255,255,0.06);
+            box-shadow: 0 1px 0 rgba(0,0,0,0.06);
         }
 
         .pass-overlay {
@@ -237,8 +238,8 @@
             position: fixed;
             inset: 0;
             z-index: 999;
-            background: #000000;
-            color: white;
+            background: #F2F2F7;
+            color: #1C1C1E;
             flex-direction: column;
             align-items: center;
             justify-content: center;
@@ -252,12 +253,12 @@
         }
     </style>
 </head>
-<body class="bg-black text-white overflow-hidden">
+<body class="bg-[#F2F2F7] text-[#1C1C1E] overflow-hidden">
     <!-- ROTATE-TO-LANDSCAPE PROMPT -->
     <div id="rotate-overlay">
         <div style="font-size:4rem; margin-bottom:1rem; transform:rotate(90deg);">📱</div>
         <div class="title-font text-2xl mb-2">Rotate your iPad</div>
-        <p class="text-sm text-white/50 max-w-xs">Rummikub plays best in landscape. Turn your device sideways to continue.</p>
+        <p class="text-sm text-black/50 max-w-xs">Rummikub plays best in landscape. Turn your device sideways to continue.</p>
     </div>
     <div id="app-root">
     <!-- MODE SELECT SCREEN -->
@@ -272,7 +273,7 @@
                 <p class="text-amber-300/80 mt-1 text-lg">2–4 Players • iPad &amp; iPhone</p>
             </div>
 
-            <div class="bg-[#1C1C1E] rounded-3xl p-8 shadow-2xl border border-white/10 space-y-3">
+            <div class="bg-white rounded-3xl p-8 shadow-2xl border border-black/10 space-y-3">
                 <h2 class="section-title text-amber-300 mb-2">Play Over WiFi</h2>
                 <button onclick="showHostSetup()"
                         class="w-full py-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all text-white font-bold text-lg rounded-2xl shadow-lg flex items-center justify-center gap-x-2">
@@ -283,11 +284,11 @@
                     <span>Join Game</span>
                 </button>
 
-                <div class="h-px bg-white/10 my-4"></div>
+                <div class="h-px bg-black/10 my-4"></div>
 
                 <h2 class="section-title text-amber-300 mb-2">Or</h2>
                 <button onclick="showSoloSetup()"
-                        class="w-full py-3.5 bg-white/10 hover:bg-white/20 active:bg-white/30 transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2">
+                        class="w-full py-3.5 bg-black/10 hover:bg-black/20 active:bg-black/30 transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2">
                     <span>Pass &amp; Play (One Device)</span>
                 </button>
                 <p class="text-center text-[10px] text-amber-300/50 mt-1">Each iPad gets its own rack. One person hosts, everyone else joins with the room code — all on the same WiFi network.</p>
@@ -305,11 +306,11 @@
             <div class="text-center mb-6">
                 <h1 class="title-font text-4xl font-bold tracking-tighter">Host a Game</h1>
             </div>
-            <div class="bg-[#1C1C1E] rounded-3xl p-8 shadow-2xl border border-white/10">
+            <div class="bg-white rounded-3xl p-8 shadow-2xl border border-black/10">
                 <div id="host-setup-form">
                     <label class="block text-sm font-medium text-amber-200 mb-2">Your Name</label>
                     <input type="text" id="host-name-input" value="You"
-                           class="w-full bg-white/5 border border-white/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm mb-6">
+                           class="w-full bg-black/5 border border-black/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm mb-6">
                     <button onclick="hostCreateRoom()"
                             class="w-full py-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all text-white font-bold text-lg rounded-2xl shadow-lg">
                         Create Room
@@ -319,18 +320,18 @@
                     <div class="text-center mb-6">
                         <div class="text-xs text-amber-300/70 uppercase tracking-widest mb-2">Room Code</div>
                         <div id="host-room-code" class="text-6xl font-black tracking-[6px] title-font text-amber-300"></div>
-                        <p class="text-xs text-white/40 mt-2">Tell others to tap "Join Game" and enter this code, on the same WiFi.</p>
+                        <p class="text-xs text-black/40 mt-2">Tell others to tap "Join Game" and enter this code, on the same WiFi.</p>
                     </div>
                     <div class="text-xs uppercase tracking-widest text-amber-300/70 mb-2">Players (<span id="host-lobby-count">1</span>/4)</div>
                     <div id="host-lobby-players" class="space-y-2 mb-6"></div>
                     <button onclick="hostStartGame()" id="host-start-btn" disabled
-                            class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-emerald-900/50 disabled:text-white/40 transition-all text-white font-bold text-lg rounded-2xl shadow-lg">
+                            class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-emerald-900/50 disabled:text-black/40 transition-all text-white font-bold text-lg rounded-2xl shadow-lg">
                         Start Game
                     </button>
                     <p class="text-center text-[10px] text-amber-300/50 mt-3">Need at least 2 players. Deals 14 tiles each once started.</p>
                 </div>
             </div>
-            <button onclick="backToModeScreen()" class="w-full text-center mt-4 text-sm text-white/50 hover:text-white/80">← Back</button>
+            <button onclick="backToModeScreen()" class="w-full text-center mt-4 text-sm text-black/50 hover:text-black/80">← Back</button>
         </div>
     </div>
 
@@ -340,14 +341,14 @@
             <div class="text-center mb-6">
                 <h1 class="title-font text-4xl font-bold tracking-tighter">Join a Game</h1>
             </div>
-            <div class="bg-[#1C1C1E] rounded-3xl p-8 shadow-2xl border border-white/10">
+            <div class="bg-white rounded-3xl p-8 shadow-2xl border border-black/10">
                 <div id="join-form">
                     <label class="block text-sm font-medium text-amber-200 mb-2">Your Name</label>
                     <input type="text" id="join-name-input" value="Player"
-                           class="w-full bg-white/5 border border-white/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm mb-4">
+                           class="w-full bg-black/5 border border-black/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm mb-4">
                     <label class="block text-sm font-medium text-amber-200 mb-2">Room Code</label>
                     <input type="text" id="join-code-input" placeholder="e.g. AB3D" autocapitalize="characters" maxlength="4"
-                           class="w-full bg-white/5 border border-white/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm mb-6 uppercase tracking-widest text-center text-2xl font-bold">
+                           class="w-full bg-black/5 border border-black/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm mb-6 uppercase tracking-widest text-center text-2xl font-bold">
                     <button onclick="joinConnectToRoom()"
                             class="w-full py-4 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 transition-all text-white font-bold text-lg rounded-2xl shadow-lg">
                         Connect
@@ -356,12 +357,12 @@
                 <div id="join-waiting-body" class="hidden text-center">
                     <div class="text-5xl mb-3">⏳</div>
                     <p class="text-lg font-semibold mb-1">Connected!</p>
-                    <p class="text-sm text-white/50 mb-6">Waiting for host to start the game…</p>
+                    <p class="text-sm text-black/50 mb-6">Waiting for host to start the game…</p>
                     <div class="text-xs uppercase tracking-widest text-amber-300/70 mb-2">Players</div>
                     <div id="join-lobby-players" class="space-y-2 text-left"></div>
                 </div>
             </div>
-            <button onclick="backToModeScreen()" class="w-full text-center mt-4 text-sm text-white/50 hover:text-white/80">← Back</button>
+            <button onclick="backToModeScreen()" class="w-full text-center mt-4 text-sm text-black/50 hover:text-black/80">← Back</button>
         </div>
     </div>
 
@@ -377,22 +378,22 @@
                 <p class="text-amber-300/80 mt-1 text-lg">2–4 Players • iPad &amp; iPhone</p>
             </div>
 
-            <div class="bg-[#1C1C1E] rounded-3xl p-8 shadow-2xl border border-white/10">
+            <div class="bg-white rounded-3xl p-8 shadow-2xl border border-black/10">
                 <h2 class="section-title text-amber-300 mb-4">New Game</h2>
                 
                 <!-- Number of Players -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-amber-200 mb-2">Number of Players</label>
                     <div class="grid grid-cols-4 gap-2" id="player-count-buttons">
-                        <button onclick="selectPlayerCount(2)" class="player-count-btn active flex flex-col items-center justify-center py-3 rounded-2xl border border-white/20 bg-white/5 hover:bg-white/10 transition" data-count="2">
+                        <button onclick="selectPlayerCount(2)" class="player-count-btn active flex flex-col items-center justify-center py-3 rounded-2xl border border-black/20 bg-black/5 hover:bg-black/10 transition" data-count="2">
                             <span class="text-2xl font-bold">2</span>
                             <span class="text-[10px] text-amber-300/70">Players</span>
                         </button>
-                        <button onclick="selectPlayerCount(3)" class="player-count-btn flex flex-col items-center justify-center py-3 rounded-2xl border border-white/20 bg-white/5 hover:bg-white/10 transition" data-count="3">
+                        <button onclick="selectPlayerCount(3)" class="player-count-btn flex flex-col items-center justify-center py-3 rounded-2xl border border-black/20 bg-black/5 hover:bg-black/10 transition" data-count="3">
                             <span class="text-2xl font-bold">3</span>
                             <span class="text-[10px] text-amber-300/70">Players</span>
                         </button>
-                        <button onclick="selectPlayerCount(4)" class="player-count-btn flex flex-col items-center justify-center py-3 rounded-2xl border border-white/20 bg-white/5 hover:bg-white/10 transition" data-count="4">
+                        <button onclick="selectPlayerCount(4)" class="player-count-btn flex flex-col items-center justify-center py-3 rounded-2xl border border-black/20 bg-black/5 hover:bg-black/10 transition" data-count="4">
                             <span class="text-2xl font-bold">4</span>
                             <span class="text-[10px] text-amber-300/70">Players</span>
                         </button>
@@ -419,29 +420,29 @@
             <div class="text-center mt-6 text-xs text-amber-300/40">
                 v0.95 • Proper Groups, Runs & Joker validation • Click melds to add tiles
             </div>
-            <button onclick="backToModeScreen()" class="w-full text-center mt-4 text-sm text-white/50 hover:text-white/80">← Back</button>
+            <button onclick="backToModeScreen()" class="w-full text-center mt-4 text-sm text-black/50 hover:text-black/80">← Back</button>
         </div>
     </div>
 
     <!-- GAME SCREEN -->
     <div id="game-screen" class="hidden h-dvh flex flex-col game-container overflow-hidden">
         <!-- Header -->
-        <div class="wood-header px-5 py-3 flex items-center justify-between border-b border-white/10 flex-shrink-0">
+        <div class="wood-header px-5 py-3 flex items-center justify-between border-b border-black/10 flex-shrink-0">
             <div class="flex items-center gap-x-3">
-                <div class="w-9 h-9 bg-[#0A84FF] rounded-2xl flex items-center justify-center text-xl font-black tracking-[-1px] text-amber-300 shadow">RK</div>
+                <div class="w-9 h-9 bg-[#0A84FF] rounded-2xl flex items-center justify-center text-xl font-black tracking-[-1px] text-white shadow">RK</div>
                 <div>
                     <span class="title-font text-3xl font-bold tracking-tighter">Rummikub</span>
                 </div>
             </div>
             
             <div class="flex items-center gap-x-4 text-sm">
-                <div class="flex items-center bg-white/10 px-3 py-1.5 rounded-2xl text-xs">
+                <div class="flex items-center bg-black/10 px-3 py-1.5 rounded-2xl text-xs">
                     <span class="text-amber-300 mr-1.5">POOL</span>
                     <span id="pool-count" class="font-mono font-bold text-lg tabular-nums">53</span>
                 </div>
                 
                 <button onclick="showGameMenu()" 
-                        class="px-4 py-1.5 text-xs bg-white/10 hover:bg-white/20 active:bg-white/30 transition rounded-2xl flex items-center gap-x-1.5">
+                        class="px-4 py-1.5 text-xs bg-black/10 hover:bg-black/20 active:bg-black/30 transition rounded-2xl flex items-center gap-x-1.5">
                     <span>Menu</span>
                 </button>
             </div>
@@ -458,29 +459,29 @@
                 </div>
                 
                 <div id="table-area" 
-                     class="table-felt flex-1 rounded-3xl p-4 overflow-y-auto border border-white/10 shadow-inner">
+                     class="table-felt flex-1 rounded-3xl p-4 overflow-y-auto border border-black/10 shadow-inner">
                     <!-- Melds populated dynamically by JS -->
                     <div id="no-melds-message" class="h-full flex items-center justify-center text-center">
                         <div>
                             <div class="text-5xl opacity-30 mb-2">🀫</div>
-                            <p class="text-sm text-white/40">No melds yet.<br>Form a valid Group or Run (30+ pts for initial).<br>After first meld, click a meld on table to add selected tiles.</p>
+                            <p class="text-sm text-black/40">No melds yet.<br>Form a valid Group or Run (30+ pts for initial).<br>After first meld, click a meld on table to add selected tiles.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- RIGHT: current-turn info, your rack, and all actions — never pushed off screen -->
-            <div class="w-[400px] flex-shrink-0 border-l border-white/10 flex flex-col overflow-hidden">
+            <div class="w-[400px] flex-shrink-0 border-l border-black/10 flex flex-col overflow-hidden">
 
                 <!-- Current Player Banner -->
                 <div id="player-banner" 
-                     class="px-5 py-3 bg-gradient-to-b from-amber-900/50 to-transparent flex items-center justify-between border-b border-white/10 flex-shrink-0">
+                     class="px-5 py-3 bg-gradient-to-b from-amber-900/50 to-transparent flex items-center justify-between border-b border-black/10 flex-shrink-0">
                     <div class="flex items-center gap-x-3 min-w-0">
                         <div id="current-player-dot" 
                              class="w-3.5 h-3.5 rounded-full bg-amber-400 ring-2 ring-amber-400/30 flex-shrink-0"></div>
                         <div class="min-w-0">
                             <div id="current-player-name" class="font-semibold text-lg leading-tight truncate">Player 1</div>
-                            <span id="initial-status" class="text-[10px] px-2 py-0.5 bg-white/10 rounded-full inline-block mt-1">Initial pending</span>
+                            <span id="initial-status" class="text-[10px] px-2 py-0.5 bg-black/10 rounded-full inline-block mt-1">Initial pending</span>
                         </div>
                     </div>
                     <div class="text-right flex-shrink-0 pl-2">
@@ -494,41 +495,47 @@
                     <div class="flex items-center justify-between mb-1.5 px-1 flex-shrink-0">
                         <div class="section-title text-amber-300">Your Rack</div>
                         <button onclick="sortRack()" 
-                                class="text-xs px-3 py-1 bg-white/10 hover:bg-white/20 active:bg-white/30 rounded-2xl transition flex items-center gap-x-1">
+                                class="text-xs px-3 py-1 bg-black/10 hover:bg-black/20 active:bg-black/30 rounded-2xl transition flex items-center gap-x-1">
                             <span>Sort</span>
                         </button>
                     </div>
                     
                     <div id="rack-area" 
-                         class="rack-container bg-[#1C1C1E] border border-white/10 rounded-3xl p-3 flex flex-wrap content-start gap-2 overflow-y-auto flex-1 items-start">
+                         class="rack-container bg-white border border-black/10 rounded-3xl p-3 flex flex-wrap content-start gap-2 overflow-y-auto flex-1 items-start">
                         <!-- Tiles populated by JS -->
                     </div>
                 </div>
 
                 <!-- Action Bar -->
-                <div class="p-4 pt-2 border-t border-white/10 flex-shrink-0">
+                <div class="p-4 pt-2 border-t border-black/10 flex-shrink-0">
                     <div class="grid grid-cols-2 gap-2">
                         
                         <button onclick="laySelectedAsMeld()" 
                                 id="btn-lay-meld"
-                                class="col-span-2 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-emerald-900/50 disabled:text-white/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2 shadow">
+                                class="col-span-2 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-emerald-900/50 disabled:text-black/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-2xl text-sm text-white flex items-center justify-center gap-x-2 shadow">
                             <span>Play Selected<br><span class="text-[10px] opacity-75">as Valid Meld</span></span>
                         </button>
                         
                         <button onclick="drawTile()" 
                                 id="btn-draw"
-                                class="py-3.5 px-4 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 disabled:bg-sky-900/40 disabled:text-white/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2">
+                                class="py-3.5 px-4 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 disabled:bg-sky-900/40 disabled:text-black/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-2xl text-sm text-white flex items-center justify-center gap-x-2">
                             <span>Draw Tile</span>
                         </button>
                         
                         <button onclick="endTurn()" 
                                 id="btn-end-turn"
-                                class="py-3.5 px-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:bg-amber-900/30 disabled:text-white/30 disabled:cursor-not-allowed disabled:shadow-none text-white font-bold transition-all rounded-2xl text-sm flex items-center justify-center gap-x-2 shadow">
+                                class="py-3.5 px-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:bg-amber-900/30 disabled:text-black/30 disabled:cursor-not-allowed disabled:shadow-none text-white font-bold transition-all rounded-2xl text-sm flex items-center justify-center gap-x-2 shadow">
                             <span>End Turn &amp; Pass</span>
                         </button>
                         
+                        <button onclick="recallTurn()" 
+                                id="btn-recall"
+                                class="py-3 px-4 bg-red-600/10 hover:bg-red-600/20 active:bg-red-600/30 disabled:bg-black/5 disabled:text-black/30 disabled:cursor-not-allowed text-red-700 transition-all rounded-2xl text-sm font-semibold flex items-center justify-center gap-x-1.5">
+                            <span>↺ Recall Turn</span>
+                        </button>
+
                         <button onclick="showHelp()" 
-                                class="col-span-2 py-3 px-4 bg-white/10 hover:bg-white/20 active:bg-white/30 transition-all rounded-2xl text-sm flex items-center justify-center">
+                                class="py-3 px-4 bg-black/10 hover:bg-black/20 active:bg-black/30 transition-all rounded-2xl text-sm flex items-center justify-center">
                             Rules
                         </button>
                     </div>
@@ -541,32 +548,32 @@
 
     <!-- PASS TO NEXT PLAYER OVERLAY -->
     <div id="pass-modal" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-6">
-        <div class="pass-overlay bg-[#1C1C1E] max-w-sm w-full rounded-3xl p-8 text-center border border-white/10">
+        <div class="pass-overlay bg-white max-w-sm w-full rounded-3xl p-8 text-center border border-black/10 shadow-2xl">
             <div class="text-6xl mb-4">👋</div>
             <h3 class="text-2xl font-semibold mb-1">Pass the device</h3>
             <p id="pass-to-name" class="text-xl text-amber-300 mb-6"></p>
             
             <button onclick="confirmPassToNext()" 
-                    class="w-full py-4 bg-white text-black font-bold text-lg rounded-2xl active:scale-[0.985] transition">
+                    class="w-full py-4 bg-[#0A84FF] text-white font-bold text-lg rounded-2xl active:scale-[0.985] transition">
                 I'm ready — Start my turn
             </button>
             
-            <p class="text-xs text-white/40 mt-4">Racks are hidden from other players</p>
+            <p class="text-xs text-black/40 mt-4">Racks are hidden from other players</p>
         </div>
     </div>
 
     <!-- WIN MODAL -->
     <div id="win-modal" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center z-[60] p-6">
-        <div class="bg-[#1C1C1E] max-w-md w-full rounded-3xl p-8 border border-white/10 text-center">
+        <div class="bg-white max-w-md w-full rounded-3xl p-8 border border-black/10 shadow-2xl text-center">
             <div class="text-7xl mb-3">🏆</div>
             <h2 id="win-title" class="text-4xl font-bold mb-1"></h2>
             <p id="win-subtitle" class="text-amber-300 mb-6"></p>
             
-            <div id="scores-list" class="text-left bg-black/30 rounded-2xl p-4 mb-6 text-sm space-y-1.5"></div>
+            <div id="scores-list" class="text-left bg-black/[0.04] rounded-2xl p-4 mb-6 text-sm space-y-1.5"></div>
             
             <div class="flex gap-3">
                 <button onclick="newGameFromWin()" 
-                        class="flex-1 py-3.5 bg-white/10 hover:bg-white/20 active:bg-white/30 transition rounded-2xl font-semibold">
+                        class="flex-1 py-3.5 bg-black/10 hover:bg-black/20 active:bg-black/30 transition rounded-2xl font-semibold">
                     New Game
                 </button>
                 <button onclick="closeWinModal()" 
@@ -579,28 +586,28 @@
 
     <!-- GAME MENU -->
     <div id="game-menu" onclick="if (event.target.id === 'game-menu') hideGameMenu()" class="hidden fixed inset-0 bg-black/70 z-[70] flex items-end sm:items-center justify-center p-4">
-        <div onclick="event.stopImmediatePropagation()" class="bg-[#1C1C1E] w-full max-w-xs rounded-3xl p-2 border border-white/10">
+        <div onclick="event.stopImmediatePropagation()" class="bg-white w-full max-w-xs rounded-3xl p-2 border border-black/10">
             <div class="p-4">
                 <div class="text-xs uppercase tracking-widest text-amber-300/70 mb-3 px-2">Game Menu</div>
                 
-                <button onclick="resetCurrentGame()" class="w-full text-left px-4 py-3 hover:bg-white/5 active:bg-white/10 rounded-2xl flex items-center gap-x-3 text-sm">
+                <button onclick="resetCurrentGame()" class="w-full text-left px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-2xl flex items-center gap-x-3 text-sm">
                     <span class="text-xl w-6">🔄</span> 
                     <span>Restart Current Game</span>
                 </button>
                 
-                <button onclick="newGame()" class="w-full text-left px-4 py-3 hover:bg-white/5 active:bg-white/10 rounded-2xl flex items-center gap-x-3 text-sm">
+                <button onclick="newGame()" class="w-full text-left px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-2xl flex items-center gap-x-3 text-sm">
                     <span class="text-xl w-6">🆕</span> 
                     <span>New Game (Change Players)</span>
                 </button>
                 
-                <div class="h-px bg-white/10 my-1 mx-2"></div>
+                <div class="h-px bg-black/10 my-1 mx-2"></div>
                 
-                <button onclick="hideGameMenu(); showHelp()" class="w-full text-left px-4 py-3 hover:bg-white/5 active:bg-white/10 rounded-2xl flex items-center gap-x-3 text-sm">
+                <button onclick="hideGameMenu(); showHelp()" class="w-full text-left px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-2xl flex items-center gap-x-3 text-sm">
                     <span class="text-xl w-6">📖</span> 
                     <span>How to Play (Rules)</span>
                 </button>
                 
-                <button onclick="hideGameMenu()" class="w-full text-left px-4 py-3 text-white/60 hover:bg-white/5 active:bg-white/10 rounded-2xl flex items-center gap-x-3 text-sm mt-1">
+                <button onclick="hideGameMenu()" class="w-full text-left px-4 py-3 text-black/60 hover:bg-black/5 active:bg-black/10 rounded-2xl flex items-center gap-x-3 text-sm mt-1">
                     <span class="text-xl w-6">✕</span> 
                     <span>Close Menu</span>
                 </button>
@@ -634,6 +641,8 @@
             initialPointsThisTurn: 0,
             hasDrawnThisTurn: false,
             turnMeldIds: [],        // meld ids created this turn while initial meld was still pending
+            consecutiveEmptyTurns: 0, // tracks a pool-exhausted stalemate (see endTurn/endGameStalemate)
+            turnSnapshot: null,     // board/rack state at the start of the active player's turn (for Recall)
             cumulativeScores: {},
             matchHistory: [],
             roundNumber: 1
@@ -723,8 +732,8 @@
             document.getElementById('host-lobby-count').textContent = gameState.players.length;
             const list = document.getElementById('host-lobby-players');
             list.innerHTML = gameState.players.map((p, i) => `
-                <div class="flex items-center gap-x-3 bg-white/5 px-4 py-2.5 rounded-2xl">
-                    <div class="w-7 h-7 flex-shrink-0 bg-white/10 rounded-xl flex items-center justify-center text-xs font-mono">${i + 1}</div>
+                <div class="flex items-center gap-x-3 bg-black/5 px-4 py-2.5 rounded-2xl">
+                    <div class="w-7 h-7 flex-shrink-0 bg-black/10 rounded-xl flex items-center justify-center text-xs font-mono">${i + 1}</div>
                     <span class="flex-1 text-sm font-medium">${p.name}${i === 0 ? ' (You, Host)' : ''}</span>
                     <span class="text-emerald-400 text-xs">●</span>
                 </div>
@@ -776,6 +785,8 @@
                     stealJoker(msg.meldId, msg.jokerId);
                 } else if (msg.action === 'moveTableTile') {
                     moveTableTile(msg.fromMeldId, msg.tileId, msg.target || {});
+                } else if (msg.action === 'recall') {
+                    recallTurn();
                 }
             }
         }
@@ -807,6 +818,7 @@
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
+            gameState.consecutiveEmptyTurns = 0;
             gameState.selectedTileIds = new Set();
             gameState.cumulativeScores = gameState.cumulativeScores || {};
             gameState.matchHistory = gameState.matchHistory || [];
@@ -825,6 +837,7 @@
             document.getElementById('host-lobby-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
 
+            captureTurnSnapshot();
             renderAll();
             updateTurnStatus('First player starts. Form your initial meld of 30+ points!');
         }
@@ -881,8 +894,8 @@
                 const list = document.getElementById('join-lobby-players');
                 if (list) {
                     list.innerHTML = msg.players.map((n, i) => `
-                        <div class="flex items-center gap-x-3 bg-white/5 px-4 py-2.5 rounded-2xl">
-                            <div class="w-7 h-7 flex-shrink-0 bg-white/10 rounded-xl flex items-center justify-center text-xs font-mono">${i + 1}</div>
+                        <div class="flex items-center gap-x-3 bg-black/5 px-4 py-2.5 rounded-2xl">
+                            <div class="w-7 h-7 flex-shrink-0 bg-black/10 rounded-xl flex items-center justify-center text-xs font-mono">${i + 1}</div>
                             <span class="flex-1 text-sm font-medium">${n}${i === netState.myIndex ? ' (You)' : ''}</span>
                         </div>
                     `).join('');
@@ -1026,6 +1039,43 @@
             });
         }
 
+        // For displaying a meld on the table: a joker in a RUN should render in the numeric slot
+        // it's standing in for (e.g. 8, 9, [joker as 10], 11) rather than always trailing at the
+        // end. Groups have no inherent order, so those just fall back to the normal color sort.
+        function sortMeldTilesForDisplay(tiles) {
+            if (!canFormRunBetter(tiles)) {
+                return sortTiles(tiles);
+            }
+
+            const nonJokers = getNonJokerTiles(tiles).sort((a, b) => a.value - b.value);
+            const jokerQueue = tiles.filter(t => t.isJoker);
+            if (nonJokers.length === 0) return tiles; // degenerate case, nothing to anchor on
+
+            const result = [];
+            let expected = nonJokers[0].value;
+            let idx = 0;
+            while (idx < nonJokers.length) {
+                if (nonJokers[idx].value === expected) {
+                    result.push(nonJokers[idx]);
+                    idx++;
+                    expected++;
+                } else if (jokerQueue.length > 0) {
+                    result.push(jokerQueue.shift()); // fills the gap at this exact slot
+                    expected++;
+                } else {
+                    // Shouldn't happen for a genuinely valid run, but don't loop forever
+                    result.push(nonJokers[idx]);
+                    idx++;
+                    expected = nonJokers[idx - 1].value + 1;
+                }
+            }
+            // Any jokers left over aren't filling an internal gap — they're extending the run
+            // beyond its real tiles. Which end they "mean" is inherently ambiguous, so they're
+            // appended at the end.
+            result.push(...jokerQueue);
+            return result;
+        }
+
         // ==================== MELD VALIDATION (Groups, Runs + Joker support) ====================
         function getNonJokerTiles(tiles) {
             return tiles.filter(t => !t.isJoker);
@@ -1158,6 +1208,8 @@
                 return;
             }
 
+            const originalMeldTiles = [...meld.tiles]; // kept in case this steal needs reverting
+
             // Remove replacement from rack
             currentPlayer.rack = currentPlayer.rack.filter(t => t.id !== replacement.id);
 
@@ -1167,11 +1219,43 @@
             // Add joker to player's rack
             currentPlayer.rack.push(jokerTile);
 
+            // Official rule: a retrieved joker MUST be played into a set this same turn — track
+            // it so endTurn() can undo the whole retrieval if that never happens.
+            gameState.pendingJokerRetrieval = {
+                jokerTile, meldId: meld.id, replacementTile: replacement, originalMeldTiles
+            };
+
             gameState.playedThisTurn = true;
 
-            showToast("Joker stolen! You replaced it with your tile.", "success");
+            showToast("Joker stolen! You replaced it with your tile. Play the joker before ending your turn.", "success");
             renderAll();
             saveGameToLocalStorage();
+        }
+
+        // If a retrieved joker never got replayed into a set this turn, put everything back the
+        // way it was — the retrieval itself is invalid per the official rules.
+        function revertPendingJokerRetrieval(player) {
+            const pending = gameState.pendingJokerRetrieval;
+            if (!pending) return false;
+
+            const meld = gameState.tableMelds.find(m => m.id === pending.meldId);
+            if (meld) {
+                meld.tiles = pending.originalMeldTiles;
+            }
+            player.rack = player.rack.filter(t => t.id !== pending.jokerTile.id);
+            player.rack.push(pending.replacementTile);
+            player.rack = sortTiles(player.rack);
+
+            gameState.pendingJokerRetrieval = null;
+            return true;
+        }
+
+        // Called whenever tiles get successfully played from the rack — clears the pending-joker
+        // tracker if the retrieved joker was among them (i.e. it was legally replayed in time).
+        function clearPendingJokerIfPlayed(playedTileIds) {
+            if (gameState.pendingJokerRetrieval && playedTileIds.includes(gameState.pendingJokerRetrieval.jokerTile.id)) {
+                gameState.pendingJokerRetrieval = null;
+            }
         }
 
         // ==================== UI RENDERING ====================
@@ -1184,8 +1268,7 @@
             if (tile.isJoker) {
                 el.innerHTML = `
                     <div class="text-center">
-                        <div class="text-3xl font-black tracking-tighter">J</div>
-                        <div class="text-[8px] -mt-1 font-bold tracking-[2px] opacity-80">JOKER</div>
+                        <div class="text-4xl leading-none">😄</div>
                     </div>
                 `;
             } else {
@@ -1477,16 +1560,24 @@
             }
 
             // Validate the destination before committing anything
+            let destReplacement = null; // only set for target.type === 'meld'
+            let toIdx = -1;
             if (target.type === 'meld') {
-                const toIdx = gameState.tableMelds.findIndex(m => m.id === target.meldId);
+                toIdx = gameState.tableMelds.findIndex(m => m.id === target.meldId);
                 if (toIdx === -1) return;
                 const toMeld = gameState.tableMelds[toIdx];
                 const combined = [...toMeld.tiles, tile];
-                if (!isValidMeld(combined)) {
-                    showToast("Can't place that tile there — it wouldn't form a valid meld.", 'error');
-                    return;
+                if (isValidMeld(combined)) {
+                    destReplacement = [combined];
+                } else {
+                    // As with adding from the rack, inserting into a run can legally split it in two
+                    const split = trySplitMeld(combined);
+                    if (!split) {
+                        showToast("Can't place that tile there — it wouldn't form a valid meld.", 'error');
+                        return;
+                    }
+                    destReplacement = split;
                 }
-                toMeld.tiles = combined;
             } else if (target.type === 'rack') {
                 currentPlayer.rack.push(tile);
                 currentPlayer.rack = sortTiles(currentPlayer.rack);
@@ -1497,14 +1588,29 @@
                 return;
             }
 
-            // Apply the source-side result: the old meld is replaced by 0, 1, or 2 melds.
-            // Object identity for any meld this tile joined (toMeld, mutated above) is preserved
-            // regardless of how this splice shifts array indices.
-            const newMelds = sourceReplacement.map((meldTiles, i) => ({
+            // Rebuild tableMelds: drop the source meld (and destination meld, if any), then add
+            // back whatever resulted on each side. Doing this as one rebuild — rather than two
+            // sequential splices — avoids index-shifting bugs when either side splits in two.
+            const dropIds = new Set([fromMeldId]);
+            if (target.type === 'meld') dropIds.add(target.meldId);
+
+            const kept = gameState.tableMelds.filter(m => !dropIds.has(m.id));
+
+            const sourceMelds = sourceReplacement.map((meldTiles, i) => ({
                 id: i === 0 ? fromMeld.id : (fromMeld.id + '_split' + Date.now() + i),
                 tiles: meldTiles
             }));
-            gameState.tableMelds.splice(fromIdx, 1, ...newMelds);
+
+            let destMelds = [];
+            if (destReplacement) {
+                const destOriginalId = target.meldId;
+                destMelds = destReplacement.map((meldTiles, i) => ({
+                    id: i === 0 ? destOriginalId : (destOriginalId + '_split' + Date.now() + i + 'b'),
+                    tiles: meldTiles
+                }));
+            }
+
+            gameState.tableMelds = [...kept, ...sourceMelds, ...destMelds];
 
             gameState.playedThisTurn = true;
             clearSelection();
@@ -1530,7 +1636,7 @@
             
             if (sortedRack.length === 0) {
                 const empty = document.createElement('div');
-                empty.className = 'text-center text-white/40 italic w-full py-3 text-sm';
+                empty.className = 'text-center text-black/40 italic w-full py-3 text-sm';
                 empty.textContent = 'Rack is empty — you won!';
                 container.appendChild(empty);
                 return;
@@ -1569,7 +1675,7 @@
             newMeldZone.innerHTML = `
                 <div class="text-center py-2">
                     <div class="font-semibold text-amber-300">Drop here to create new meld</div>
-                    <div class="text-[10px] text-white/50">Drag 3+ tiles from your rack</div>
+                    <div class="text-[10px] text-black/50">Drag 3+ tiles from your rack</div>
                 </div>
             `;
             container.appendChild(newMeldZone);
@@ -1612,15 +1718,15 @@
                 const header = document.createElement('div');
                 header.className = 'flex justify-between items-center mb-2 px-1';
                 header.innerHTML = `
-                    <span class="text-xs font-semibold text-white/70">Meld ${index + 1}</span>
-                    <span class="text-[10px] text-white/40">${meld.tiles.length} tiles</span>
+                    <span class="text-xs font-semibold text-black/70">Meld ${index + 1}</span>
+                    <span class="text-[10px] text-black/40">${meld.tiles.length} tiles</span>
                 `;
                 meldCard.appendChild(header);
 
                 const tilesRow = document.createElement('div');
                 tilesRow.className = 'flex flex-wrap gap-1.5';
                 
-                const sortedTiles = sortTiles(meld.tiles);
+                const sortedTiles = sortMeldTilesForDisplay(meld.tiles);
                 sortedTiles.forEach(tile => {
                     const tileEl = createTileElement(tile, false, canDragFromTable() ? { sourceType: 'table', meldId: meld.id } : null); // not in rack
                     // Make slightly smaller on table
@@ -1727,6 +1833,12 @@
                 endTurnBtn.disabled = !myTurn || !playedThisTurn;
             }
 
+            // Recall Turn button — only useful once you've actually done something this turn
+            const recallBtn = document.getElementById('btn-recall');
+            if (recallBtn) {
+                recallBtn.disabled = !myTurn || !playedThisTurn;
+            }
+
             if (netState.mode !== 'solo') {
                 updateTurnStatus(myTurn ? '' : 'Waiting for other player\u2019s turn\u2026');
             }
@@ -1745,15 +1857,15 @@
             const toastContainer = document.getElementById('toast-container') || createToastContainer();
             
             const toast = document.createElement('div');
-            toast.className = `toast max-w-xs px-4 py-3 rounded-2xl shadow-xl text-sm flex items-start gap-2 border ${
-                type === 'success' ? 'bg-emerald-900/90 border-emerald-600 text-emerald-100' :
-                type === 'error' ? 'bg-red-900/90 border-red-600 text-red-100' :
-                'bg-[#1C1C1E] border-white/20 text-white'
+            toast.className = `toast max-w-xs px-4 py-3 rounded-2xl shadow-lg text-sm flex items-start gap-2 border bg-white ${
+                type === 'success' ? 'border-emerald-600/40 text-emerald-700' :
+                type === 'error' ? 'border-red-600/40 text-red-700' :
+                'border-black/10 text-black'
             }`;
             
             toast.innerHTML = `
                 <div class="flex-1">${message}</div>
-                <button onclick="this.parentElement.remove()" class="text-white/60 hover:text-white ml-2">×</button>
+                <button onclick="this.parentElement.remove()" class="text-black/40 hover:text-black ml-2">×</button>
             `;
             
             toastContainer.appendChild(toast);
@@ -1959,13 +2071,25 @@
             // Combine and check if still valid
             const combined = [...targetMeld.tiles, ...selectedTiles];
             
-            if (!isValidMeld(combined)) {
-                alert('Adding these tiles would not create a valid meld.\n\nThe combined tiles must still form a proper Group or Run (jokers allowed).');
-                return;
+            if (isValidMeld(combined)) {
+                // Success — add the tiles to the meld and remove from rack
+                targetMeld.tiles = combined;
+            } else {
+                // Per the official rules, inserting a tile into the middle of a run can legally
+                // "split" it into two separate valid runs (e.g. adding a 6 to 4,5,6,7,8 →
+                // 4,5,6 and 6,7,8). Try that before rejecting the move outright.
+                const split = trySplitMeld(combined);
+                if (!split) {
+                    alert('Adding these tiles would not create a valid meld.\n\nThe combined tiles must still form a proper Group or Run — or split into two valid Runs (jokers allowed).');
+                    return;
+                }
+                const newMelds = split.map((meldTiles, i) => ({
+                    id: i === 0 ? targetMeld.id : (targetMeld.id + '_split' + Date.now() + i),
+                    tiles: meldTiles
+                }));
+                gameState.tableMelds.splice(meldIndex, 1, ...newMelds);
             }
 
-            // Success — add the tiles to the meld and remove from rack
-            targetMeld.tiles.push(...selectedTiles);
             currentPlayer.rack = remainingRack;
 
             gameState.playedThisTurn = true;
@@ -2028,6 +2152,53 @@
             return reverted;
         }
 
+        // Captures the board/rack state at the moment a turn begins, so the active player can
+        // recall (undo) everything they've done this turn and get back to exactly this point.
+        function captureTurnSnapshot() {
+            const player = getCurrentPlayer();
+            if (!player) { gameState.turnSnapshot = null; return; }
+            gameState.turnSnapshot = {
+                playerIndex: gameState.currentPlayerIndex,
+                rack: player.rack.map(t => ({ ...t })),
+                hasInitial: player.hasInitial,
+                tableMelds: gameState.tableMelds.map(m => ({ id: m.id, tiles: m.tiles.map(t => ({ ...t })) })),
+                pool: gameState.pool.map(t => ({ ...t }))
+            };
+        }
+
+        // Restores the board and the active player's rack to exactly how they were when this
+        // turn started, undoing every play/draw/manipulation made so far this turn.
+        function recallTurn() {
+            if (netState.mode === 'client') {
+                if (!isMyTurn()) return;
+                sendAction({ action: 'recall' });
+                return;
+            }
+
+            const snap = gameState.turnSnapshot;
+            if (!snap || snap.playerIndex !== gameState.currentPlayerIndex) {
+                showToast("Nothing to recall.", 'error');
+                return;
+            }
+
+            const player = gameState.players[gameState.currentPlayerIndex];
+            player.rack = snap.rack.map(t => ({ ...t }));
+            player.hasInitial = snap.hasInitial;
+            gameState.tableMelds = snap.tableMelds.map(m => ({ id: m.id, tiles: m.tiles.map(t => ({ ...t })) }));
+            gameState.pool = snap.pool.map(t => ({ ...t }));
+
+            gameState.initialPointsThisTurn = 0;
+            gameState.playedThisTurn = false;
+            gameState.hasDrawnThisTurn = false;
+            gameState.turnMeldIds = [];
+            gameState.selectedTileIds = new Set();
+            clientSelectedTileIds.clear();
+
+            renderAll();
+            updateTurnStatus('Turn recalled — back to how the board was when your turn started.');
+            saveGameToLocalStorage();
+        }
+
         function endTurn() {
             if (netState.mode === 'client') {
                 if (!isMyTurn()) return;
@@ -2086,6 +2257,19 @@
                 return;
             }
 
+            // If the pool is empty and this player played nothing this turn, nobody's making
+            // progress. Once every player in turn has had a chance and still can't move, the
+            // round ends and whoever holds the lowest-value rack wins it (official rule).
+            if (!gameState.playedThisTurn && gameState.pool.length === 0) {
+                gameState.consecutiveEmptyTurns = (gameState.consecutiveEmptyTurns || 0) + 1;
+            } else {
+                gameState.consecutiveEmptyTurns = 0;
+            }
+            if (gameState.consecutiveEmptyTurns >= gameState.players.length) {
+                endGameStalemate();
+                return;
+            }
+
             // Switch to next player
             const nextIndex = (gameState.currentPlayerIndex + 1) % gameState.players.length;
             const nextPlayer = gameState.players[nextIndex];
@@ -2098,6 +2282,8 @@
             gameState.turnMeldIds = [];
             gameState.selectedTileIds.clear();
             gameState.heldTableTile = null;
+
+            captureTurnSnapshot();
 
             if (netState.mode === 'solo') {
                 // Show pass modal - physically hand the device to the next player
@@ -2149,10 +2335,10 @@
             // Update active button styles
             document.querySelectorAll('.player-count-btn').forEach(btn => {
                 btn.classList.remove('active', 'border-amber-400', 'bg-amber-900/30');
-                btn.classList.add('border-white/20', 'bg-white/5');
+                btn.classList.add('border-black/20', 'bg-black/5');
                 if (parseInt(btn.dataset.count) === count) {
                     btn.classList.add('active', 'border-amber-400', 'bg-amber-900/30');
-                    btn.classList.remove('border-white/20', 'bg-white/5');
+                    btn.classList.remove('border-black/20', 'bg-black/5');
                 }
             });
 
@@ -2170,9 +2356,9 @@
                 const div = document.createElement('div');
                 div.className = 'flex items-center gap-x-3';
                 div.innerHTML = `
-                    <div class="w-7 h-7 flex-shrink-0 bg-white/10 rounded-xl flex items-center justify-center text-xs font-mono">${i + 1}</div>
+                    <div class="w-7 h-7 flex-shrink-0 bg-black/10 rounded-xl flex items-center justify-center text-xs font-mono">${i + 1}</div>
                     <input type="text" id="player-name-${i}" value="${defaults[i] || `Player ${i + 1}`}" 
-                           class="flex-1 bg-white/5 border border-white/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm placeholder:text-white/40">
+                           class="flex-1 bg-black/5 border border-black/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm placeholder:text-black/40">
                 `;
                 container.appendChild(div);
             }
@@ -2201,6 +2387,7 @@
             gameState.playedThisTurn = false;
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0;
+            gameState.consecutiveEmptyTurns = 0;
             gameState.turnMeldIds = [];
             gameState.selectedTileIds = new Set();
             gameState.gameStarted = true;
@@ -2229,6 +2416,7 @@
             document.getElementById('game-screen').classList.remove('hidden');
 
             // Initial render
+            captureTurnSnapshot();
             renderAll();
             updateTurnStatus('First player starts. Form your initial meld of 30+ points!');
 
@@ -2236,19 +2424,25 @@
             saveGameToLocalStorage();
         }
 
-        function endGame(winner) {
+        function endGame(winner, reason = 'empty-rack') {
             gameState.gameStarted = false;
 
-            // Calculate penalties and update cumulative scores
+            // Per the official rules, each player's score is (their rack value - the winner's own
+            // rack value), as a negative. In a normal win the winner's rack is empty (0), so this
+            // reduces to the familiar "full rack value" penalty. In a pool-exhausted stalemate the
+            // "winner" is just whoever holds the least value — this generalizes correctly to that
+            // case too, since it's the same official formula either way.
+            const winnerOwnValue = winner.rack.reduce((sum, t) => sum + (t.isJoker ? 30 : t.value), 0);
             let totalAddedToWinner = 0;
 
             gameState.players.forEach(p => {
                 if (p !== winner) {
-                    const penalty = p.rack.reduce((sum, t) => sum + (t.isJoker ? 30 : t.value), 0);
+                    const playerValue = p.rack.reduce((sum, t) => sum + (t.isJoker ? 30 : t.value), 0);
+                    const penalty = playerValue - winnerOwnValue;
                     totalAddedToWinner += penalty;
 
-                    // Initialize if not exists
                     if (!gameState.cumulativeScores[p.name]) gameState.cumulativeScores[p.name] = 0;
+                    gameState.cumulativeScores[p.name] -= penalty; // losers' running totals actually go down
                 }
             });
 
@@ -2261,7 +2455,8 @@
             // Build scores display
             const scoresHTML = gameState.players.map(p => {
                 const isWinner = p === winner;
-                const penalty = isWinner ? 0 : p.rack.reduce((sum, t) => sum + (t.isJoker ? 30 : t.value), 0);
+                const playerValue = p.rack.reduce((sum, t) => sum + (t.isJoker ? 30 : t.value), 0);
+                const penalty = isWinner ? 0 : (playerValue - winnerOwnValue);
                 const cumulative = gameState.cumulativeScores[p.name] || 0;
 
                 return `<div class="flex justify-between items-center py-1 ${isWinner ? 'text-emerald-400' : ''}">
@@ -2270,7 +2465,7 @@
                         <div class="font-mono ${isWinner ? 'text-emerald-400' : 'text-red-400'} font-bold">
                             ${isWinner ? '+' : ''}${penalty}
                         </div>
-                        <div class="text-[10px] text-white/50">Total: ${cumulative}</div>
+                        <div class="text-[10px] text-black/50">Total: ${cumulative}</div>
                     </div>
                 </div>`;
             }).join('');
@@ -2278,8 +2473,12 @@
             const currentScore = gameState.cumulativeScores[winner.name] || 0;
             const target = gameState.matchTarget || 0;
 
-            let title = `${winner.name} wins the round!`;
-            let subtitle = `+${totalAddedToWinner} points to ${winner.name}`;
+            let title = reason === 'stalemate'
+                ? `${winner.name} wins the round — lowest rack value!`
+                : `${winner.name} wins the round!`;
+            let subtitle = reason === 'stalemate'
+                ? `Pool ran out and no one could play — +${totalAddedToWinner} points to ${winner.name}`
+                : `+${totalAddedToWinner} points to ${winner.name}`;
 
             if (target > 0 && currentScore >= target) {
                 title = `🏆 ${winner.name} wins the MATCH!`;
@@ -2302,7 +2501,8 @@
                 subtitle,
                 scores: gameState.players.map(p => {
                     const isWinner = p === winner;
-                    const penalty = isWinner ? 0 : p.rack.reduce((sum, t) => sum + (t.isJoker ? 30 : t.value), 0);
+                    const playerValue = p.rack.reduce((sum, t) => sum + (t.isJoker ? 30 : t.value), 0);
+                    const penalty = isWinner ? 0 : (playerValue - winnerOwnValue);
                     return { name: p.name, isWinner, penalty, cumulative: gameState.cumulativeScores[p.name] || 0 };
                 })
             };
@@ -2321,7 +2521,7 @@
             nextRoundBtn.textContent = 'Next Round →';
             nextRoundBtn.onclick = startNextRound;
 
-            document.getElementById('win-modal').querySelector('.bg-\\[\\#1C1C1E\\]').appendChild(nextRoundBtn);
+            document.getElementById('win-modal').querySelector('.bg-white').appendChild(nextRoundBtn);
 
             document.getElementById('win-modal').classList.remove('hidden');
             document.getElementById('win-modal').classList.add('flex');
@@ -2330,13 +2530,25 @@
             if (netState.mode === 'host') broadcastViews();
         }
 
+        // Official rule: if the pool runs out and no player can make any further play, the round
+        // ends and whoever holds the lowest-value rack wins it.
+        function endGameStalemate() {
+            let winner = gameState.players[0];
+            let winnerValue = winner.rack.reduce((sum, t) => sum + (t.isJoker ? 30 : t.value), 0);
+            gameState.players.forEach(p => {
+                const value = p.rack.reduce((sum, t) => sum + (t.isJoker ? 30 : t.value), 0);
+                if (value < winnerValue) { winner = p; winnerValue = value; }
+            });
+            endGame(winner, 'stalemate');
+        }
+
         function showWinFromPayload(payload) {
             const scoresHTML = payload.scores.map(s => `
                 <div class="flex justify-between items-center py-1 ${s.isWinner ? 'text-emerald-400' : ''}">
                     <span>${s.name} ${s.isWinner ? '(Winner)' : ''}</span>
                     <div class="text-right">
                         <div class="font-mono ${s.isWinner ? 'text-emerald-400' : 'text-red-400'} font-bold">${s.isWinner ? '+' : ''}${s.penalty}</div>
-                        <div class="text-[10px] text-white/50">Total: ${s.cumulative}</div>
+                        <div class="text-[10px] text-black/50">Total: ${s.cumulative}</div>
                     </div>
                 </div>
             `).join('');
@@ -2373,6 +2585,7 @@
             gameState.tableMelds = [];
             gameState.playedThisTurn = false;
             gameState.hasDrawnThisTurn = false;
+            gameState.consecutiveEmptyTurns = 0;
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
             gameState.selectedTileIds = new Set();
@@ -2388,6 +2601,7 @@
             });
 
             renderAll();
+            captureTurnSnapshot();
             updateTurnStatus(`Round ${gameState.roundNumber} started. First player begins.`);
             saveGameToLocalStorage();
         }
@@ -2424,6 +2638,7 @@
             gameState.currentPlayerIndex = 0;
             gameState.tableMelds = [];
             gameState.playedThisTurn = false;
+            gameState.consecutiveEmptyTurns = 0;
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
@@ -2438,6 +2653,7 @@
             });
 
             renderAll();
+            captureTurnSnapshot();
             updateTurnStatus('Game restarted. First player starts.');
             saveGameToLocalStorage();
         }
@@ -2463,6 +2679,7 @@
                     cumulativeScores: gameState.cumulativeScores,
                     matchHistory: gameState.matchHistory,
                     roundNumber: gameState.roundNumber,
+                    turnSnapshot: gameState.turnSnapshot,
                     gameStarted: true
                 };
                 localStorage.setItem('rummikubGameState', JSON.stringify(serializable));
@@ -2493,12 +2710,14 @@
                 gameState.roundNumber = parsed.roundNumber || 1;
                 gameState.gameStarted = true;
                 gameState.selectedTileIds = new Set();
+                netState.mode = 'solo'; // must be set before captureTurnSnapshot() (uses getCurrentPlayer())
+                gameState.turnSnapshot = parsed.turnSnapshot || null;
+                if (!gameState.turnSnapshot) captureTurnSnapshot(); // older save from before Recall existed
 
                 // Show game screen
                 document.getElementById('mode-screen').classList.add('hidden');
                 document.getElementById('setup-screen').classList.add('hidden');
                 document.getElementById('game-screen').classList.remove('hidden');
-                netState.mode = 'solo';
 
                 renderAll();
                 updateTurnStatus('Game resumed from last session.');
@@ -2635,10 +2854,10 @@
             
             gameState.matchHistory.forEach(entry => {
                 html += `
-                    <div class="flex justify-between items-center bg-white/5 px-4 py-2 rounded-2xl">
+                    <div class="flex justify-between items-center bg-black/5 px-4 py-2 rounded-2xl">
                         <div>
                             <span class="font-semibold">Round ${entry.round}</span>
-                            <span class="text-white/60 text-xs ml-2">• ${entry.winner}</span>
+                            <span class="text-black/60 text-xs ml-2">• ${entry.winner}</span>
                         </div>
                         <div class="font-mono text-emerald-400">+${entry.pointsAwarded}</div>
                     </div>
@@ -2651,14 +2870,14 @@
             const modal = document.createElement('div');
             modal.className = `fixed inset-0 bg-black/80 z-[90] flex items-center justify-center p-6`;
             modal.innerHTML = `
-                <div class="bg-[#1C1C1E] w-full max-w-sm rounded-3xl p-6 border border-white/10">
+                <div class="bg-white w-full max-w-sm rounded-3xl p-6 border border-black/10">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold">Match History</h3>
-                        <button onclick="this.closest('.fixed').remove()" class="text-2xl text-white/60 hover:text-white">×</button>
+                        <button onclick="this.closest('.fixed').remove()" class="text-2xl text-black/60 hover:text-black">×</button>
                     </div>
                     ${html}
                     <button onclick="this.closest('.fixed').remove()" 
-                            class="mt-5 w-full py-3 bg-white/10 hover:bg-white/20 rounded-2xl text-sm">
+                            class="mt-5 w-full py-3 bg-black/10 hover:bg-black/20 rounded-2xl text-sm">
                         Close
                     </button>
                 </div>
@@ -2695,7 +2914,7 @@ Have fun on the Weskus!`;
             const btn2 = document.querySelector('.player-count-btn[data-count="2"]');
             if (btn2) {
                 btn2.classList.add('active', 'border-amber-400', 'bg-amber-900/30');
-                btn2.classList.remove('border-white/20', 'bg-white/5');
+                btn2.classList.remove('border-black/20', 'bg-black/5');
             }
             updatePlayerNameInputs(2);
         }
