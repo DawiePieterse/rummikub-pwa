@@ -119,6 +119,8 @@
         .tile {
             width: 3.25rem;
             height: 4.5rem;
+            font-size: 1.75rem; /* base size for the number inside — overridden per-instance for
+                                    crowded racks / table tiles; the number inherits this */
             font-feature-settings: "tnum";
             box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset, 0 4px 10px -2px rgb(0 0 0 / 0.45);
             transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), 
@@ -136,6 +138,14 @@
             transform: translateY(-4px) scale(1.05);
             box-shadow: 0 0 0 4px rgb(255 214 10 / 0.7), 0 10px 18px -3px rgb(0 0 0 / 0.4);
             z-index: 10;
+        }
+
+        /* Marks the tile just drawn from the pool, for the rest of the turn it was drawn */
+        .tile.just-drawn {
+            box-shadow: 0 0 0 3px #30D158, 0 4px 10px -2px rgb(0 0 0 / 0.35);
+        }
+        .tile.just-drawn.selected {
+            box-shadow: 0 0 0 3px #30D158, 0 0 0 6px rgb(255 214 10 / 0.7), 0 10px 18px -3px rgb(0 0 0 / 0.4);
         }
 
         .tile.joker {
@@ -169,9 +179,11 @@
 
         .rummikub-tile-number {
             font-family: ui-rounded, -apple-system, 'SF Pro Rounded', system-ui, sans-serif;
-            font-size: 2.1rem;
+            font-size: inherit;
             line-height: 1;
-            font-weight: 800;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
         }
 
         .wood-header {
@@ -643,6 +655,7 @@
             turnMeldIds: [],        // meld ids created this turn while initial meld was still pending
             consecutiveEmptyTurns: 0, // tracks a pool-exhausted stalemate (see endTurn/endGameStalemate)
             turnSnapshot: null,     // board/rack state at the start of the active player's turn (for Recall)
+            justDrawnTileId: null,  // highlighted green in the rack for the rest of the turn it was drawn
             cumulativeScores: {},
             matchHistory: [],
             roundNumber: 1
@@ -942,6 +955,10 @@
             return netState.mode === 'client' ? clientSelectedTileIds : gameState.selectedTileIds;
         }
 
+        function getJustDrawnTileId() {
+            return netState.mode === 'client' ? (clientView ? clientView.justDrawnTileId : null) : gameState.justDrawnTileId;
+        }
+
         function buildViewFor(index) {
             const me = gameState.players[index];
             return {
@@ -955,6 +972,7 @@
                 initialPointsThisTurn: gameState.initialPointsThisTurn,
                 playedThisTurn: gameState.playedThisTurn,
                 hasDrawnThisTurn: gameState.hasDrawnThisTurn,
+                justDrawnTileId: gameState.justDrawnTileId,
                 winner: gameState.lastWinnerPayload || null
             };
         }
@@ -1299,6 +1317,11 @@
             // Selected state
             if (getSelectedIds().has(tile.id) && isInRack) {
                 el.classList.add('selected', 'ring-4', 'ring-yellow-400');
+            }
+
+            // Highlight the tile just drawn from the pool, for the rest of this turn
+            if (isInRack && tile.id === getJustDrawnTileId()) {
+                el.classList.add('just-drawn');
             }
 
             // Wire up dragging (rack → board, or board → board/rack) when allowed for this viewer right now
@@ -1651,7 +1674,7 @@
                     // Make tiles smaller and allow better wrapping when rack is full
                     tileEl.style.width = '2.6rem';
                     tileEl.style.height = '3.6rem';
-                    tileEl.style.fontSize = isCrowded ? '1.1rem' : '1.3rem';
+                    tileEl.style.fontSize = '1.3rem';
                 }
                 
                 container.appendChild(tileEl);
@@ -1705,7 +1728,7 @@
 
             melds.forEach((meld, index) => {
                 const meldCard = document.createElement('div');
-                meldCard.className = `meld-card rounded-2xl p-3 cursor-pointer active:scale-[0.985] transition`;
+                meldCard.className = `meld-card rounded-2xl p-2 cursor-pointer active:scale-[0.985] transition`;
                 meldCard.title = "Click to add your selected tiles to this meld";
                 meldCard.dataset.meldId = meld.id;
                 
@@ -1714,14 +1737,6 @@
                     if (netState.mode !== 'solo' && !isMyTurn()) return;
                     tryAddSelectedToMeld(meld.id);
                 };
-                
-                const header = document.createElement('div');
-                header.className = 'flex justify-between items-center mb-2 px-1';
-                header.innerHTML = `
-                    <span class="text-xs font-semibold text-black/70">Meld ${index + 1}</span>
-                    <span class="text-[10px] text-black/40">${meld.tiles.length} tiles</span>
-                `;
-                meldCard.appendChild(header);
 
                 const tilesRow = document.createElement('div');
                 tilesRow.className = 'flex flex-wrap gap-1.5';
@@ -1732,7 +1747,7 @@
                     // Make slightly smaller on table
                     tileEl.style.width = '2.65rem';
                     tileEl.style.height = '3.65rem';
-                    tileEl.style.fontSize = '1.05rem';
+                    tileEl.style.fontSize = '1.35rem';
 
                     // A joker can be stolen (swapped for a rack tile that keeps the meld
                     // valid) once you've made your own initial meld, on your own turn.
@@ -1833,10 +1848,12 @@
                 endTurnBtn.disabled = !myTurn || !playedThisTurn;
             }
 
-            // Recall Turn button — only useful once you've actually done something this turn
+            // Recall Turn button — only enabled once a meld/manipulation has actually been played
+            // this turn. Drawing alone sets playedThisTurn too, but shouldn't make Recall active —
+            // hasDrawn reliably distinguishes the two since drawing locks out playing (and vice versa).
             const recallBtn = document.getElementById('btn-recall');
             if (recallBtn) {
-                recallBtn.disabled = !myTurn || !playedThisTurn;
+                recallBtn.disabled = !myTurn || !playedThisTurn || hasDrawn;
             }
 
             if (netState.mode !== 'solo') {
@@ -2121,6 +2138,7 @@
 
             gameState.playedThisTurn = true;
             gameState.hasDrawnThisTurn = true;
+            gameState.justDrawnTileId = drawnTile.id; // highlighted in the rack until this turn ends
 
             autoSortCurrentRack();
             clearSelection();
@@ -2191,6 +2209,7 @@
             gameState.playedThisTurn = false;
             gameState.hasDrawnThisTurn = false;
             gameState.turnMeldIds = [];
+            gameState.justDrawnTileId = null;
             gameState.selectedTileIds = new Set();
             clientSelectedTileIds.clear();
 
@@ -2282,6 +2301,7 @@
             gameState.turnMeldIds = [];
             gameState.selectedTileIds.clear();
             gameState.heldTableTile = null;
+            gameState.justDrawnTileId = null;
 
             captureTurnSnapshot();
 
