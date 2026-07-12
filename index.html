@@ -36,12 +36,6 @@
         };
     </script>
     <style>
-        :root {
-            --wood: #FFFFFF;
-            --felt: #EDEDF2;
-            --accent: #0A84FF;
-        }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
             -webkit-font-smoothing: antialiased;
@@ -99,13 +93,6 @@
             outline: 3px dashed #0A84FF;
             outline-offset: 2px;
             background-color: rgba(10,132,255,0.12) !important;
-        }
-
-        /* Frosted-glass surface used for panels, headers, and cards */
-        .glass {
-            background: rgba(255, 255, 255, 0.72);
-            backdrop-filter: blur(24px) saturate(180%);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
         }
 
         .table-felt {
@@ -202,12 +189,6 @@
             to { opacity: 1; transform: scale(1); }
         }
 
-        .tile-small {
-            width: 2.1rem;
-            height: 2.9rem;
-            font-size: 0.95rem;
-        }
-
         /* Better feedback styles */
         .tile.valid-preview {
             box-shadow: 0 0 0 3px #30D158, 0 10px 15px -3px rgb(0 0 0 / 0.3);
@@ -218,11 +199,6 @@
             box-shadow: 0 0 0 3px #FF453A, 0 10px 15px -3px rgb(0 0 0 / 0.3);
             border-color: #FF453A;
             opacity: 0.85;
-        }
-
-        .meld-card.manipulable {
-            border-color: #FF9F0A;
-            box-shadow: 0 0 0 2px rgba(255, 159, 10, 0.2);
         }
 
         .joker-stealable {
@@ -654,6 +630,18 @@
                 
                 <div class="h-px bg-black/10 my-1 mx-2"></div>
                 
+                <button onclick="showMatchHistory()" class="w-full text-left px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-2xl flex items-center gap-x-3 text-sm">
+                    <span class="text-xl w-6">📊</span> 
+                    <span>Match History</span>
+                </button>
+
+                <button onclick="resetCumulativeScores()" class="w-full text-left px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-2xl flex items-center gap-x-3 text-sm">
+                    <span class="text-xl w-6">🗑️</span> 
+                    <span>Reset Cumulative Scores</span>
+                </button>
+
+                <div class="h-px bg-black/10 my-1 mx-2"></div>
+                
                 <button onclick="hideGameMenu(); showHelp()" class="w-full text-left px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-2xl flex items-center gap-x-3 text-sm">
                     <span class="text-xl w-6">📖</span> 
                     <span>How to Play (Rules)</span>
@@ -668,11 +656,6 @@
     </div>
 
     <script>
-        // ==================== TAILWIND CONFIG ====================
-        function initTailwind() {
-            document.documentElement.style.setProperty('--accent', '#0A84FF');
-        }
-
         // ==================== GAME STATE ====================
         let gameState = {
             players: [],
@@ -682,8 +665,6 @@
             playedThisTurn: false,
             gameStarted: false,
             selectedTileIds: new Set(),
-            heldTableTile: null,   // for move/split operations
-            selectedMeldForAction: null,
             // These were previously never initialized, which caused two real bugs:
             // (1) initialPointsThisTurn being undefined made the very first initial-meld
             //     attempt of a fresh game compute NaN (undefined + number), so the
@@ -697,12 +678,11 @@
             turnSnapshot: null,     // board/rack state at the start of the active player's turn (for Recall)
             justDrawnTileId: null,  // highlighted green in the rack for the rest of the turn it was drawn
             tileVariant: 'standard', // 'standard' (106 tiles, 2-4 players) or 'xp' (160 tiles, 5-6 players)
+            pendingJokerRetrieval: null, // set when a joker is stolen; must be replayed this turn or it's undone
             cumulativeScores: {},
             matchHistory: [],
             roundNumber: 1
         };
-
-        let allTiles = []; // master list for reference
 
         // ==================== NETWORKING (WebRTC / PeerJS) ====================
         // mode: 'solo' (pass & play, one device) | 'host' | 'client'
@@ -711,8 +691,7 @@
             myIndex: 0,
             peer: null,
             conns: [],        // host only: DataConnection per player index (index 0 = host = null)
-            roomCode: '',
-            lobbyNames: []    // host only: names in join order, index-aligned with gameState.players
+            roomCode: ''
         };
         let clientView = null;           // client only: latest state pushed from host
         let clientSelectedTileIds = new Set(); // client only: local tile selection before sending an action
@@ -772,7 +751,6 @@
             netState.myIndex = 0;
             netState.roomCode = code;
             netState.conns = [null]; // index 0 = host itself, no connection needed
-            netState.lobbyNames = [hostName];
 
             gameState.players = [{ name: hostName, rack: [], hasInitial: false, score: 0 }];
 
@@ -889,6 +867,7 @@
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
+            gameState.pendingJokerRetrieval = null;
             gameState.consecutiveEmptyTurns = 0;
             gameState.selectedTileIds = new Set();
             gameState.cumulativeScores = gameState.cumulativeScores || {};
@@ -897,7 +876,6 @@
             gameState.gameStarted = true;
 
             const tiles = generateAllTiles(gameState.tileVariant);
-            allTiles = tiles;
             gameState.pool = shuffle(tiles);
 
             gameState.players.forEach(player => {
@@ -1031,6 +1009,7 @@
                 playedThisTurn: gameState.playedThisTurn,
                 hasDrawnThisTurn: gameState.hasDrawnThisTurn,
                 justDrawnTileId: gameState.justDrawnTileId,
+                hasPendingJokerRetrieval: !!(gameState.pendingJokerRetrieval && index === gameState.currentPlayerIndex),
                 winner: gameState.lastWinnerPayload || null
             };
         }
@@ -1087,26 +1066,6 @@
         // ==================== HELPER FUNCTIONS ====================
         function getCurrentPlayer() {
             return gameState.players[gameState.currentPlayerIndex];
-        }
-
-        function findTileById(id) {
-            // Search in all locations
-            for (let p of gameState.players) {
-                const found = p.rack.find(t => t.id === id);
-                if (found) return found;
-            }
-            for (let meld of gameState.tableMelds) {
-                const found = meld.tiles.find(t => t.id === id);
-                if (found) return found;
-            }
-            return gameState.pool.find(t => t.id === id);
-        }
-
-        function calculatePoints(tiles) {
-            return tiles.reduce((sum, tile) => {
-                if (tile.isJoker) return sum + 0; // v0.9: jokers count 0 for initial check
-                return sum + tile.value;
-            }, 0);
         }
 
         function sortTiles(tiles) {
@@ -1300,12 +1259,12 @@
             currentPlayer.rack.push(jokerTile);
 
             // Official rule: a retrieved joker MUST be played into a set this same turn — track
-            // it so endTurn() can undo the whole retrieval if that never happens.
+            // it so endTurn() can undo the whole retrieval if that never happens. Note this does
+            // NOT set playedThisTurn — stealing alone isn't a complete play; only actually
+            // replaying the joker (or drawing instead) counts, same as any other turn.
             gameState.pendingJokerRetrieval = {
                 jokerTile, meldId: meld.id, replacementTile: replacement, originalMeldTiles
             };
-
-            gameState.playedThisTurn = true;
 
             showToast("Joker stolen! You replaced it with your tile. Play the joker before ending your turn.", "success");
             renderAll();
@@ -1897,16 +1856,18 @@
             const hasSelection = getSelectedIds().size > 0;
             const myTurn = isMyTurn();
 
-            let hasDrawn, poolCount, playedThisTurn;
+            let hasDrawn, poolCount, playedThisTurn, hasPendingJoker;
             if (netState.mode === 'client') {
                 if (!clientView) return;
                 hasDrawn = clientView.hasDrawnThisTurn;
                 poolCount = clientView.poolCount;
                 playedThisTurn = clientView.playedThisTurn;
+                hasPendingJoker = !!clientView.hasPendingJokerRetrieval;
             } else {
                 hasDrawn = gameState.hasDrawnThisTurn;
                 poolCount = gameState.pool.length;
                 playedThisTurn = gameState.playedThisTurn;
+                hasPendingJoker = !!gameState.pendingJokerRetrieval;
             }
 
             // If you have already drawn this turn, you cannot play any more tiles
@@ -1919,15 +1880,17 @@
             // End Turn button
             const endTurnBtn = document.getElementById('btn-end-turn');
             if (endTurnBtn) {
-                endTurnBtn.disabled = !myTurn || !playedThisTurn;
+                endTurnBtn.disabled = !myTurn || !(playedThisTurn || hasPendingJoker);
             }
 
-            // Recall Turn button — only enabled once a meld/manipulation has actually been played
-            // this turn. Drawing alone sets playedThisTurn too, but shouldn't make Recall active —
-            // hasDrawn reliably distinguishes the two since drawing locks out playing (and vice versa).
+            // Recall Turn button — enabled once a meld/manipulation has actually been played this
+            // turn, OR there's a stolen joker still waiting to be replayed. Drawing alone sets
+            // playedThisTurn too, but shouldn't make Recall active — hasDrawn reliably
+            // distinguishes the two since drawing locks out playing (and vice versa).
             const recallBtn = document.getElementById('btn-recall');
             if (recallBtn) {
-                recallBtn.disabled = !myTurn || !playedThisTurn || hasDrawn;
+                const hasSomethingToRecall = hasPendingJoker || (playedThisTurn && !hasDrawn);
+                recallBtn.disabled = !myTurn || !hasSomethingToRecall;
             }
 
             if (netState.mode !== 'solo') {
@@ -2100,6 +2063,9 @@
             // Mark that we played this turn
             gameState.playedThisTurn = true;
 
+            // If a previously-stolen joker was just replayed, the retrieval is now legitimate
+            clearPendingJokerIfPlayed(selectedTiles.map(t => t.id));
+
             // Clear selection
             clearSelection();
 
@@ -2184,6 +2150,10 @@
             currentPlayer.rack = remainingRack;
 
             gameState.playedThisTurn = true;
+
+            // If a previously-stolen joker was just replayed, the retrieval is now legitimate
+            clearPendingJokerIfPlayed(selectedTiles.map(t => t.id));
+
             clearSelection();
 
             if (currentPlayer.rack.length === 0) {
@@ -2284,6 +2254,7 @@
             gameState.hasDrawnThisTurn = false;
             gameState.turnMeldIds = [];
             gameState.justDrawnTileId = null;
+            gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
             clientSelectedTileIds.clear();
 
@@ -2301,6 +2272,17 @@
 
             const currentPlayer = getCurrentPlayer();
             if (!currentPlayer) return;
+
+            // Official rule: a joker retrieved from the table must be replayed into a set this
+            // same turn. If that never happened, undo the whole retrieval before anything else.
+            if (revertPendingJokerRetrieval(currentPlayer)) {
+                const msg = "You didn't replay the joker you took — it's been put back where it was.";
+                if (netState.mode === 'solo') {
+                    alert(msg);
+                } else {
+                    showToast(msg, 'error');
+                }
+            }
 
             // If they haven't made their initial meld yet, any melds placed this turn
             // don't count on their own — return them to the rack — then a draw is required
@@ -2374,7 +2356,6 @@
             gameState.initialPointsThisTurn = 0; // Reset initial meld progress for next player
             gameState.turnMeldIds = [];
             gameState.selectedTileIds.clear();
-            gameState.heldTableTile = null;
             gameState.justDrawnTileId = null;
 
             captureTurnSnapshot();
@@ -2513,6 +2494,7 @@
             gameState.initialPointsThisTurn = 0;
             gameState.consecutiveEmptyTurns = 0;
             gameState.turnMeldIds = [];
+            gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
             gameState.gameStarted = true;
             // A brand new game (possibly with different players) starts a fresh match tally.
@@ -2524,7 +2506,6 @@
 
             // Generate and deal tiles
             const tiles = generateAllTiles(gameState.tileVariant);
-            allTiles = tiles; // keep reference
             const shuffled = shuffle(tiles);
             
             gameState.pool = shuffled;
@@ -2712,6 +2693,7 @@
             gameState.consecutiveEmptyTurns = 0;
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
+            gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
             clientSelectedTileIds.clear();
             gameState.roundNumber = (gameState.roundNumber || 1) + 1;
@@ -2766,6 +2748,7 @@
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
+            gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
 
             const tiles = generateAllTiles(gameState.tileVariant);
@@ -2900,11 +2883,6 @@
             }
         }
 
-        function showInstallPrompt() {
-            // For iOS we show a tip instead of beforeinstallprompt (which is limited)
-            // This is called on first load of game screen
-        }
-
         // ==================== MENU & HELP ====================
         function showGameMenu() {
             document.getElementById('game-menu').classList.remove('hidden');
@@ -2917,57 +2895,16 @@
             menu.classList.add('hidden');
         }
 
-        function showSettings() {
-            const modal = document.getElementById('settings-modal');
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-
-            // Load current settings
-            const soundEnabled = localStorage.getItem('rummikubSound') !== 'false';
-            document.getElementById('setting-sound').checked = soundEnabled;
-        }
-
-        function hideSettings() {
-            const modal = document.getElementById('settings-modal');
-            modal.classList.remove('flex');
-            modal.classList.add('hidden');
-        }
-
-        function toggleSound(enabled) {
-            localStorage.setItem('rummikubSound', enabled ? 'true' : 'false');
-            if (enabled) {
-                playSound('move'); // Test sound
-            }
-        }
-
-        function setTileSize(size) {
-            const root = document.documentElement;
-            root.style.setProperty('--tile-scale', size === 'small' ? '0.85' : size === 'large' ? '1.25' : '1');
-
-            localStorage.setItem('rummikubTileSize', size);
-            showToast(`Tile size set to ${size}`, 'success');
-        }
-
-        function clearAllData() {
-            if (confirm('Clear all saved games and preferences? This cannot be undone.')) {
-                localStorage.removeItem('rummikubGameState');
-                localStorage.removeItem('rummikubSound');
-                localStorage.removeItem('rummikubTileSize');
-                location.reload();
-            }
-        }
-
         function resetCumulativeScores() {
-            if (confirm('Reset cumulative scores for all players?')) {
-                gameState.cumulativeScores = {};
-                saveGameToLocalStorage();
-                hideSettings();
-                showToast('Cumulative scores have been reset.', 'success');
-            }
+            hideGameMenu();
+            if (!confirm('Reset cumulative scores for all players?')) return;
+            gameState.cumulativeScores = {};
+            saveGameToLocalStorage();
+            showToast('Cumulative scores have been reset.', 'success');
         }
 
         function showMatchHistory() {
-            hideSettings();
+            hideGameMenu();
 
             if (!gameState.matchHistory || gameState.matchHistory.length === 0) {
                 showToast("No rounds played yet.", "info");
@@ -3045,7 +2982,6 @@ Have fun on the Weskus!`;
         }
 
         function init() {
-            initTailwind();
             initPlayerCountButtons();
             registerServiceWorker();
 
