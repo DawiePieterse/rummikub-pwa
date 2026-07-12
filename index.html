@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Rummikub">
     <meta name="theme-color" content="#F2F2F7">
-    <title>Rummikub PWA • 2-4 Players</title>
+    <title>Rummikub PWA • 2-6 Players</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Rummikub%20PWA%22%2C%22short_name%22%3A%22Rummikub%22%2C%22description%22%3A%22Play%20Rummikub%20with%202-4%20players%20over%20WiFi%20on%20separate%20iPads%2C%20or%20pass-and-play%20on%20one%20device.%22%2C%22start_url%22%3A%22.%2Findex.html%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F2F2F7%22%2C%22theme_color%22%3A%22%230A84FF%22%2C%22orientation%22%3A%22landscape%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20100%20100%27%253E%253Crect%20width%3D%27100%27%20height%3D%27100%27%20rx%3D%2722%27%20fill%3D%27%25230A84FF%27%2F%253E%253Ctext%20x%3D%2750%27%20y%3D%2766%27%20font-size%3D%2752%27%20font-family%3D%27-apple-system%2Csystem-ui%27%20font-weight%3D%27800%27%20text-anchor%3D%27middle%27%20fill%3D%27white%27%253ER%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
@@ -282,7 +282,7 @@
                     <span class="title-font text-5xl font-black text-white">R</span>
                 </div>
                 <h1 class="title-font text-6xl font-bold tracking-tighter">Rummikub</h1>
-                <p class="text-amber-300/80 mt-1 text-lg">2–4 Players • iPad &amp; iPhone</p>
+                <p class="text-amber-300/80 mt-1 text-lg">2–6 Players • iPad &amp; iPhone</p>
             </div>
 
             <div class="bg-white rounded-3xl p-8 shadow-2xl border border-black/10 space-y-3">
@@ -323,6 +323,21 @@
                     <label class="block text-sm font-medium text-amber-200 mb-2">Your Name</label>
                     <input type="text" id="host-name-input" value="You"
                            class="w-full bg-black/5 border border-black/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm mb-6">
+
+                    <label class="block text-sm font-medium text-amber-200 mb-2">Tile Set</label>
+                    <div class="grid grid-cols-2 gap-2 mb-6" id="host-tile-variant-buttons">
+                        <button type="button" onclick="selectHostTileVariant('standard')" data-variant="standard"
+                                class="host-tile-variant-btn active flex flex-col items-center justify-center py-2.5 rounded-2xl border border-amber-400 bg-amber-900/30 transition">
+                            <span class="text-sm font-bold">Standard</span>
+                            <span class="text-[10px] text-amber-300/70">106 tiles • up to 4</span>
+                        </button>
+                        <button type="button" onclick="selectHostTileVariant('xp')" data-variant="xp"
+                                class="host-tile-variant-btn flex flex-col items-center justify-center py-2.5 rounded-2xl border border-black/20 bg-black/5 hover:bg-black/10 transition">
+                            <span class="text-sm font-bold">XP</span>
+                            <span class="text-[10px] text-amber-300/70">160 tiles • up to 6</span>
+                        </button>
+                    </div>
+
                     <button onclick="hostCreateRoom()"
                             class="w-full py-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all text-white font-bold text-lg rounded-2xl shadow-lg">
                         Create Room
@@ -334,13 +349,13 @@
                         <div id="host-room-code" class="text-6xl font-black tracking-[6px] title-font text-amber-300"></div>
                         <p class="text-xs text-black/40 mt-2">Tell others to tap "Join Game" and enter this code, on the same WiFi.</p>
                     </div>
-                    <div class="text-xs uppercase tracking-widest text-amber-300/70 mb-2">Players (<span id="host-lobby-count">1</span>/4)</div>
+                    <div class="text-xs uppercase tracking-widest text-amber-300/70 mb-2">Players (<span id="host-lobby-count">1</span>/<span id="host-lobby-max">4</span>)</div>
                     <div id="host-lobby-players" class="space-y-2 mb-6"></div>
                     <button onclick="hostStartGame()" id="host-start-btn" disabled
                             class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-emerald-900/50 disabled:text-black/40 transition-all text-white font-bold text-lg rounded-2xl shadow-lg">
                         Start Game
                     </button>
-                    <p class="text-center text-[10px] text-amber-300/50 mt-3">Need at least 2 players. Deals 14 tiles each once started.</p>
+                    <p class="text-center text-[10px] text-amber-300/50 mt-3" id="host-lobby-hint">Need at least 2 players. Deals 14 tiles each once started.</p>
                 </div>
             </div>
             <button onclick="backToModeScreen()" class="w-full text-center mt-4 text-sm text-black/50 hover:text-black/80">← Back</button>
@@ -387,17 +402,34 @@
                     <span class="title-font text-5xl font-black text-white">R</span>
                 </div>
                 <h1 class="title-font text-6xl font-bold tracking-tighter">Rummikub</h1>
-                <p class="text-amber-300/80 mt-1 text-lg">2–4 Players • iPad &amp; iPhone</p>
+                <p class="text-amber-300/80 mt-1 text-lg">2–6 Players • iPad &amp; iPhone</p>
             </div>
 
             <div class="bg-white rounded-3xl p-8 shadow-2xl border border-black/10">
                 <h2 class="section-title text-amber-300 mb-4">New Game</h2>
+
+                <!-- Tile Set -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-amber-200 mb-2">Tile Set</label>
+                    <div class="grid grid-cols-2 gap-2" id="tile-variant-buttons">
+                        <button onclick="selectTileVariant('standard')" data-variant="standard"
+                                class="tile-variant-btn active flex flex-col items-center justify-center py-2.5 rounded-2xl border border-amber-400 bg-amber-900/30 transition">
+                            <span class="text-sm font-bold">Standard</span>
+                            <span class="text-[10px] text-amber-300/70">106 tiles • 2-4 players</span>
+                        </button>
+                        <button onclick="selectTileVariant('xp')" data-variant="xp"
+                                class="tile-variant-btn flex flex-col items-center justify-center py-2.5 rounded-2xl border border-black/20 bg-black/5 hover:bg-black/10 transition">
+                            <span class="text-sm font-bold">XP</span>
+                            <span class="text-[10px] text-amber-300/70">160 tiles • 5-6 players</span>
+                        </button>
+                    </div>
+                </div>
                 
                 <!-- Number of Players -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-amber-200 mb-2">Number of Players</label>
-                    <div class="grid grid-cols-4 gap-2" id="player-count-buttons">
-                        <button onclick="selectPlayerCount(2)" class="player-count-btn active flex flex-col items-center justify-center py-3 rounded-2xl border border-black/20 bg-black/5 hover:bg-black/10 transition" data-count="2">
+                    <div class="grid grid-cols-3 gap-2" id="player-count-buttons">
+                        <button onclick="selectPlayerCount(2)" class="player-count-btn active flex flex-col items-center justify-center py-3 rounded-2xl border border-amber-400 bg-amber-900/30 transition" data-count="2">
                             <span class="text-2xl font-bold">2</span>
                             <span class="text-[10px] text-amber-300/70">Players</span>
                         </button>
@@ -408,6 +440,14 @@
                         <button onclick="selectPlayerCount(4)" class="player-count-btn flex flex-col items-center justify-center py-3 rounded-2xl border border-black/20 bg-black/5 hover:bg-black/10 transition" data-count="4">
                             <span class="text-2xl font-bold">4</span>
                             <span class="text-[10px] text-amber-300/70">Players</span>
+                        </button>
+                        <button onclick="selectPlayerCount(5)" data-requires-xp="true" disabled class="player-count-btn flex flex-col items-center justify-center py-3 rounded-2xl border border-black/10 bg-black/[0.02] text-black/30 cursor-not-allowed transition" data-count="5">
+                            <span class="text-2xl font-bold">5</span>
+                            <span class="text-[10px] text-amber-300/50 player-count-sublabel">XP only</span>
+                        </button>
+                        <button onclick="selectPlayerCount(6)" data-requires-xp="true" disabled class="player-count-btn flex flex-col items-center justify-center py-3 rounded-2xl border border-black/10 bg-black/[0.02] text-black/30 cursor-not-allowed transition" data-count="6">
+                            <span class="text-2xl font-bold">6</span>
+                            <span class="text-[10px] text-amber-300/50 player-count-sublabel">XP only</span>
                         </button>
                     </div>
                 </div>
@@ -513,8 +553,8 @@
                     </div>
                     
                     <div id="rack-area" 
-                         class="rack-container bg-white border border-black/10 rounded-3xl p-3 flex flex-wrap content-start gap-2 overflow-y-auto flex-1 items-start">
-                        <!-- Tiles populated by JS -->
+                         class="rack-container bg-white border border-black/10 rounded-3xl p-3 flex flex-col gap-2 overflow-y-auto flex-1 items-stretch">
+                        <!-- Tiles populated by JS, grouped one row per color -->
                     </div>
                 </div>
 
@@ -656,6 +696,7 @@
             consecutiveEmptyTurns: 0, // tracks a pool-exhausted stalemate (see endTurn/endGameStalemate)
             turnSnapshot: null,     // board/rack state at the start of the active player's turn (for Recall)
             justDrawnTileId: null,  // highlighted green in the rack for the rest of the turn it was drawn
+            tileVariant: 'standard', // 'standard' (106 tiles, 2-4 players) or 'xp' (160 tiles, 5-6 players)
             cumulativeScores: {},
             matchHistory: [],
             roundNumber: 1
@@ -706,6 +747,22 @@
         }
 
         // ---------- HOST ----------
+        function getMaxPlayers() {
+            return gameState.tileVariant === 'xp' ? 6 : 4;
+        }
+
+        function selectHostTileVariant(variant) {
+            gameState.tileVariant = variant;
+            document.querySelectorAll('.host-tile-variant-btn').forEach(btn => {
+                const isActive = btn.dataset.variant === variant;
+                btn.classList.toggle('active', isActive);
+                btn.classList.toggle('border-amber-400', isActive);
+                btn.classList.toggle('bg-amber-900/30', isActive);
+                btn.classList.toggle('border-black/20', !isActive);
+                btn.classList.toggle('bg-black/5', !isActive);
+            });
+        }
+
         function hostCreateRoom() {
             const nameInput = document.getElementById('host-name-input');
             const hostName = (nameInput.value || 'Host').trim() || 'Host';
@@ -743,6 +800,7 @@
 
         function renderHostLobby() {
             document.getElementById('host-lobby-count').textContent = gameState.players.length;
+            document.getElementById('host-lobby-max').textContent = getMaxPlayers();
             const list = document.getElementById('host-lobby-players');
             list.innerHTML = gameState.players.map((p, i) => `
                 <div class="flex items-center gap-x-3 bg-black/5 px-4 py-2.5 rounded-2xl">
@@ -762,8 +820,8 @@
                     conn.send({ t: 'error', message: 'Game already in progress.' });
                     return;
                 }
-                if (gameState.players.length >= 4) {
-                    conn.send({ t: 'error', message: 'Room is full (4 players max).' });
+                if (gameState.players.length >= getMaxPlayers()) {
+                    conn.send({ t: 'error', message: `Room is full (${getMaxPlayers()} players max).` });
                     return;
                 }
                 const index = gameState.players.length;
@@ -838,7 +896,7 @@
             gameState.roundNumber = gameState.roundNumber || 1;
             gameState.gameStarted = true;
 
-            const tiles = generateAllTiles();
+            const tiles = generateAllTiles(gameState.tileVariant);
             allTiles = tiles;
             gameState.pool = shuffle(tiles);
 
@@ -992,23 +1050,27 @@
         };
 
         // ==================== TILE GENERATION ====================
-        function generateAllTiles() {
+        function generateAllTiles(variant = 'standard') {
             const tiles = [];
             let idCounter = 0;
             const colors = ['red', 'blue', 'yellow', 'black'];
             const numbers = Array.from({ length: 13 }, (_, i) => i + 1);
+            // Standard: 2 copies of each number/color (106 tiles total w/ 2 jokers) — for 2-4 players.
+            // XP: 3 copies of each number/color (160 tiles total w/ 4 jokers) — official rules for 5-6 players.
+            const copiesPerNumber = variant === 'xp' ? 3 : 2;
+            const jokerCount = variant === 'xp' ? 4 : 2;
 
             colors.forEach(color => {
                 numbers.forEach(num => {
-                    // Two of each number per color
-                    tiles.push({ id: idCounter++, color, value: num, isJoker: false });
-                    tiles.push({ id: idCounter++, color, value: num, isJoker: false });
+                    for (let c = 0; c < copiesPerNumber; c++) {
+                        tiles.push({ id: idCounter++, color, value: num, isJoker: false });
+                    }
                 });
             });
 
-            // Two jokers
-            tiles.push({ id: idCounter++, color: 'joker', value: 0, isJoker: true });
-            tiles.push({ id: idCounter++, color: 'joker', value: 0, isJoker: true });
+            for (let j = 0; j < jokerCount; j++) {
+                tiles.push({ id: idCounter++, color: 'joker', value: 0, isJoker: true });
+            }
 
             return tiles;
         }
@@ -1666,18 +1728,30 @@
             }
 
             const isCrowded = sortedRack.length > 16;
-            
-            sortedRack.forEach(tile => {
-                const tileEl = createTileElement(tile, true, canDragFromRack() ? { sourceType: 'rack' } : null);
-                
-                if (isCrowded) {
-                    // Make tiles smaller and allow better wrapping when rack is full
-                    tileEl.style.width = '2.6rem';
-                    tileEl.style.height = '3.6rem';
-                    tileEl.style.fontSize = '1.3rem';
-                }
-                
-                container.appendChild(tileEl);
+
+            // One row per color, in a fixed order, jokers on their own row at the end
+            const colorOrder = ['red', 'blue', 'yellow', 'black', 'joker'];
+            colorOrder.forEach(color => {
+                const tilesOfColor = sortedRack.filter(t => t.color === color);
+                if (tilesOfColor.length === 0) return;
+
+                const row = document.createElement('div');
+                row.className = 'flex flex-wrap gap-2';
+
+                tilesOfColor.forEach(tile => {
+                    const tileEl = createTileElement(tile, true, canDragFromRack() ? { sourceType: 'rack' } : null);
+
+                    if (isCrowded) {
+                        // Make tiles smaller and allow better wrapping when rack is full
+                        tileEl.style.width = '2.6rem';
+                        tileEl.style.height = '3.6rem';
+                        tileEl.style.fontSize = '1.3rem';
+                    }
+
+                    row.appendChild(tileEl);
+                });
+
+                container.appendChild(row);
             });
 
             // Update count
@@ -2351,6 +2425,36 @@
         }
 
         // ==================== GAME FLOW ====================
+        function selectTileVariant(variant) {
+            gameState.tileVariant = variant;
+
+            document.querySelectorAll('.tile-variant-btn').forEach(btn => {
+                const isActive = btn.dataset.variant === variant;
+                btn.classList.toggle('active', isActive);
+                btn.classList.toggle('border-amber-400', isActive);
+                btn.classList.toggle('bg-amber-900/30', isActive);
+                btn.classList.toggle('border-black/20', !isActive);
+                btn.classList.toggle('bg-black/5', !isActive);
+            });
+
+            // 5 & 6 players are only available with the XP tile set
+            document.querySelectorAll('.player-count-btn[data-requires-xp="true"]').forEach(btn => {
+                const allow = variant === 'xp';
+                btn.disabled = !allow;
+                btn.classList.toggle('cursor-not-allowed', !allow);
+                btn.classList.toggle('text-black/30', !allow);
+                btn.classList.toggle('bg-black/[0.02]', !allow);
+                const sublabel = btn.querySelector('.player-count-sublabel');
+                if (sublabel) sublabel.textContent = allow ? 'Players' : 'XP only';
+            });
+
+            // If switching away from XP while 5 or 6 was selected, fall back to 4
+            const activeCountBtn = document.querySelector('.player-count-btn.active');
+            if (variant !== 'xp' && activeCountBtn && parseInt(activeCountBtn.dataset.count) > 4) {
+                selectPlayerCount(4);
+            }
+        }
+
         function selectPlayerCount(count) {
             // Update active button styles
             document.querySelectorAll('.player-count-btn').forEach(btn => {
@@ -2370,7 +2474,7 @@
             const container = document.getElementById('player-name-inputs');
             container.innerHTML = '';
 
-            const defaults = ['You', 'Ann', 'Dewan', 'Charindie']; // Personal touch for user
+            const defaults = ['You', 'Ann', 'Dewan', 'Charindie', 'Player 5', 'Player 6']; // Personal touch for user
 
             for (let i = 0; i < count; i++) {
                 const div = document.createElement('div');
@@ -2419,7 +2523,7 @@
             gameState.roundNumber = 1;
 
             // Generate and deal tiles
-            const tiles = generateAllTiles();
+            const tiles = generateAllTiles(gameState.tileVariant);
             allTiles = tiles; // keep reference
             const shuffled = shuffle(tiles);
             
@@ -2613,7 +2717,7 @@
             gameState.roundNumber = (gameState.roundNumber || 1) + 1;
             gameState.gameStarted = true;
 
-            const tiles = generateAllTiles();
+            const tiles = generateAllTiles(gameState.tileVariant);
             gameState.pool = shuffle(tiles);
 
             players.forEach(player => {
@@ -2664,7 +2768,7 @@
             gameState.turnMeldIds = [];
             gameState.selectedTileIds = new Set();
 
-            const tiles = generateAllTiles();
+            const tiles = generateAllTiles(gameState.tileVariant);
             const shuffled = shuffle(tiles);
             gameState.pool = shuffled;
 
@@ -2919,6 +3023,7 @@
 • Empty your rack first = win!
 • Jokers are fully supported for forming/adding to melds in this version
 • Steal a joker from a table meld: tap the pulsing joker once you have your own initial meld and a matching tile in your rack — it swaps in for you
+• 5-6 players: choose the "XP" tile set (160 tiles, 4 jokers) when starting a game or hosting a room — Standard (106 tiles) only supports up to 4
 • Drag & drop: drag rack tiles onto "Drop here" to form a new meld, or onto an existing meld to add to it. Once you have your own initial meld, you can also drag tiles already on the table — onto another meld, or back to your own rack. A meld will split in two if you pull a tile out of the middle of a long run and both halves are still valid; moves that would leave an invalid meld behind are rejected
 
 Hotseat only (pass the iPad). More manipulation & joker stealing coming soon.
