@@ -61,10 +61,6 @@
             align-content: flex-start;
             gap: 0.75rem;
         }
-        #table-area .new-meld-zone {
-            flex-basis: 100%;
-            width: 100%;
-        }
         #table-area .meld-card {
             flex: 0 0 auto;
         }
@@ -137,6 +133,16 @@
         }
         .tile.just-drawn.selected {
             box-shadow: 0 0 0 3px #30D158, 0 0 0 6px rgb(255 214 10 / 0.7), 0 10px 18px -3px rgb(0 0 0 / 0.4);
+        }
+
+        /* Marks tiles just placed/moved on the board this turn — visible to every player, so
+           everyone can see at a glance what just changed. Clears the instant the turn ends. */
+        .tile.newly-placed {
+            animation: newlyPlacedGlow 1.6s ease-in-out infinite;
+        }
+        @keyframes newlyPlacedGlow {
+            0%, 100% { box-shadow: 0 0 6px 2px rgba(10, 132, 255, 0.55), 0 4px 10px -2px rgb(0 0 0 / 0.35); }
+            50% { box-shadow: 0 0 14px 5px rgba(10, 132, 255, 0.85), 0 4px 10px -2px rgb(0 0 0 / 0.35); }
         }
 
         .tile.joker {
@@ -524,14 +530,6 @@
 
                 <!-- RACK -->
                 <div class="flex-1 flex flex-col p-4 min-h-0 overflow-hidden">
-                    <div class="flex items-center justify-between mb-1.5 px-1 flex-shrink-0">
-                        <div class="section-title text-amber-300">Your Rack</div>
-                        <button onclick="sortRack()" 
-                                class="text-xs px-3 py-1 bg-black/10 hover:bg-black/20 active:bg-black/30 rounded-2xl transition flex items-center gap-x-1">
-                            <span>Sort</span>
-                        </button>
-                    </div>
-                    
                     <div id="rack-area" 
                          class="rack-container bg-white border border-black/10 rounded-3xl p-3 flex flex-col gap-2 overflow-y-auto flex-1 items-stretch">
                         <!-- Tiles populated by JS, grouped one row per color -->
@@ -644,6 +642,11 @@
                     <span>Reset Cumulative Scores</span>
                 </button>
 
+                <button onclick="toggleSoundSetting()" class="w-full text-left px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-2xl flex items-center gap-x-3 text-sm">
+                    <span class="text-xl w-6" id="menu-sound-icon">🔊</span> 
+                    <span id="menu-sound-label">Sound: On</span>
+                </button>
+
                 <div class="h-px bg-black/10 my-1 mx-2"></div>
                 
                 <button onclick="hideGameMenu(); showHelp()" class="w-full text-left px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-2xl flex items-center gap-x-3 text-sm">
@@ -681,6 +684,8 @@
             consecutiveEmptyTurns: 0, // tracks a pool-exhausted stalemate (see endTurn/endGameStalemate)
             turnSnapshot: null,     // board/rack state at the start of the active player's turn (for Recall)
             justDrawnTileId: null,  // highlighted green in the rack for the rest of the turn it was drawn
+            newlyPlacedTileIds: [], // tiles placed/moved on the board this turn, glow for all players until it ends
+            oneTileWarning: null,   // { seq, playerName } — broadcast to everyone when a rack drops to 1 tile
             tileVariant: 'standard', // 'standard' (106 tiles, 2-4 players) or 'xp' (160 tiles, 5-6 players)
             pendingJokerRetrieval: null, // set when a joker is stolen; must be replayed this turn or it's undone
             cumulativeScores: {},
@@ -871,6 +876,7 @@
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
+            gameState.newlyPlacedTileIds = [];
             gameState.pendingJokerRetrieval = null;
             gameState.consecutiveEmptyTurns = 0;
             gameState.selectedTileIds = new Set();
@@ -969,6 +975,12 @@
                     netState.lastShownWinSeq = clientView.winner.seq;
                     showWinFromPayload(clientView.winner);
                 }
+
+                if (clientView.oneTileWarning && clientView.oneTileWarning.seq !== netState.lastShownOneTileSeq) {
+                    netState.lastShownOneTileSeq = clientView.oneTileWarning.seq;
+                    showToast(`⚠️ ${clientView.oneTileWarning.playerName} has only ONE tile left!`, 'warning');
+                    playSound('oneTile');
+                }
             }
         }
 
@@ -999,6 +1011,10 @@
             return netState.mode === 'client' ? (clientView ? clientView.justDrawnTileId : null) : gameState.justDrawnTileId;
         }
 
+        function getNewlyPlacedTileIds() {
+            return netState.mode === 'client' ? (clientView ? clientView.newlyPlacedTileIds : []) : gameState.newlyPlacedTileIds;
+        }
+
         function buildViewFor(index) {
             const me = gameState.players[index];
             return {
@@ -1013,7 +1029,9 @@
                 playedThisTurn: gameState.playedThisTurn,
                 hasDrawnThisTurn: gameState.hasDrawnThisTurn,
                 justDrawnTileId: gameState.justDrawnTileId,
+                newlyPlacedTileIds: gameState.newlyPlacedTileIds,
                 hasPendingJokerRetrieval: !!(gameState.pendingJokerRetrieval && index === gameState.currentPlayerIndex),
+                oneTileWarning: gameState.oneTileWarning,
                 winner: gameState.lastWinnerPayload || null
             };
         }
@@ -1300,6 +1318,9 @@
             // Replace joker in meld with the real tile
             meld.tiles = meld.tiles.map(t => t.id === jokerId ? replacement : t);
 
+            // Glow the replacement tile for everyone until this player's turn ends
+            gameState.newlyPlacedTileIds.push(replacement.id);
+
             // Add joker to player's rack
             currentPlayer.rack.push(jokerTile);
 
@@ -1313,6 +1334,7 @@
 
             showToast("Joker stolen! You replaced it with your tile. Play the joker before ending your turn.", "success");
             renderAll();
+            playSound('joker');
             saveGameToLocalStorage();
         }
 
@@ -1340,6 +1362,19 @@
             if (gameState.pendingJokerRetrieval && playedTileIds.includes(gameState.pendingJokerRetrieval.jokerTile.id)) {
                 gameState.pendingJokerRetrieval = null;
             }
+        }
+
+        // Broadcasts a heads-up to every player the moment someone's rack drops to a single
+        // tile — the classic "watch out" moment in Rummikub. Local (host/solo) player sees it
+        // immediately here; networked clients pick it up via oneTileWarning in the state view.
+        function checkOneTileWarning(player) {
+            if (player.rack.length !== 1) return;
+            gameState.oneTileWarning = {
+                seq: (gameState.oneTileWarning ? gameState.oneTileWarning.seq : 0) + 1,
+                playerName: player.name
+            };
+            showToast(`⚠️ ${player.name} has only ONE tile left!`, 'warning');
+            playSound('oneTile');
         }
 
         // ==================== UI RENDERING ====================
@@ -1496,11 +1531,12 @@
             const meldCard = el.closest('.meld-card');
             if (meldCard && meldCard.dataset.meldId) return { type: 'meld', meldId: meldCard.dataset.meldId, el: meldCard };
 
-            const newMeldZone = el.closest('.new-meld-zone');
-            if (newMeldZone) return { type: 'newmeld', el: newMeldZone };
-
             const rackArea = el.closest('#rack-area');
             if (rackArea) return { type: 'rack', el: rackArea };
+
+            // Dropped on empty board space (not on a specific meld) — treat as "create new meld"
+            const tableArea = el.closest('#table-area');
+            if (tableArea) return { type: 'newmeld', el: tableArea };
 
             return null;
         }
@@ -1701,9 +1737,16 @@
 
             gameState.tableMelds = [...kept, ...sourceMelds, ...destMelds];
 
+            // Glow the moved tile for everyone until this player's turn ends (only relevant if
+            // it landed in a meld — a tile retracted to the rack isn't on the board to glow)
+            if (target.type === 'meld') {
+                gameState.newlyPlacedTileIds.push(tile.id);
+            }
+
             gameState.playedThisTurn = true;
             clearSelection();
             renderAll();
+            playSound('place');
             saveGameToLocalStorage();
         }
 
@@ -1803,19 +1846,8 @@
             const meldsRaw = netState.mode === 'client' ? (clientView ? clientView.tableMelds : []) : gameState.tableMelds;
             const melds = sortMeldsForBoard(meldsRaw);
 
-            // Clear previous melds and any old new-meld zone
-            container.querySelectorAll('.meld-card, .new-meld-zone, .meld-section-divider').forEach(el => el.remove());
-
-            // Always show New Meld Drop Zone at the top
-            const newMeldZone = document.createElement('div');
-            newMeldZone.className = 'new-meld-zone';
-            newMeldZone.innerHTML = `
-                <div class="text-center py-2">
-                    <div class="font-semibold text-amber-300">Drop here to create new meld</div>
-                    <div class="text-[10px] text-black/50">Drag 3+ tiles from your rack</div>
-                </div>
-            `;
-            container.appendChild(newMeldZone);
+            // Clear previous melds and section dividers
+            container.querySelectorAll('.meld-card, .meld-section-divider').forEach(el => el.remove());
 
             if (melds.length === 0) {
                 noMeldsMsg.style.display = 'flex';
@@ -1839,6 +1871,7 @@
                 myHasInitial = mine ? mine.hasInitial : false;
             }
             const canStealRightNow = isMyTurn() && myHasInitial;
+            const newlyPlacedIds = new Set(getNewlyPlacedTileIds() || []);
 
             let lastType = null;
             melds.forEach((meld) => {
@@ -1871,6 +1904,10 @@
                     tileEl.style.width = '2.65rem';
                     tileEl.style.height = '3.65rem';
                     tileEl.style.fontSize = '1.35rem';
+
+                    if (newlyPlacedIds.has(tile.id)) {
+                        tileEl.classList.add('newly-placed');
+                    }
 
                     // A joker can be stolen (swapped for a rack tile that keeps the meld
                     // valid) once you've made your own initial meld, on your own turn.
@@ -1918,6 +1955,16 @@
 
             document.getElementById('current-player-name').textContent = turnPlayerName;
             document.getElementById('rack-count').textContent = myRackCount;
+
+            // On each device: bold/vivid when it's this player's own turn, muted otherwise —
+            // makes it immediately obvious at a glance whether you're waiting or up to play.
+            const myTurnNow = isMyTurn();
+            document.getElementById('current-player-name').className = myTurnNow
+                ? 'font-bold text-lg leading-tight truncate text-[#0A84FF]'
+                : 'font-semibold text-lg leading-tight truncate text-black/40';
+            document.getElementById('current-player-dot').className = myTurnNow
+                ? 'w-3.5 h-3.5 rounded-full bg-[#0A84FF] ring-2 ring-[#0A84FF]/30 flex-shrink-0'
+                : 'w-3.5 h-3.5 rounded-full bg-black/20 ring-2 ring-black/10 flex-shrink-0';
 
             const statusEl = document.getElementById('initial-status');
             if (turnPlayerHasInitial) {
@@ -1994,18 +2041,109 @@
             document.getElementById('turn-status').textContent = message;
         }
 
-        // Simple toast notifications for better feedback (instead of alert)
+        // ==================== SOUND EFFECTS ====================
+        // Synthesized via the Web Audio API rather than bundled audio files, so everything stays
+        // in this one HTML file and still works fully offline.
+        let audioCtx = null;
+
+        function getAudioContext() {
+            if (!audioCtx) {
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                } catch (e) {
+                    return null; // Web Audio unsupported — sounds just silently no-op
+                }
+            }
+            // iOS/Safari suspend the context until a user gesture resumes it; every sound here
+            // is already triggered by a tap, so this reliably unlocks it on first play.
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+            return audioCtx;
+        }
+
+        function isSoundEnabled() {
+            return localStorage.getItem('rummikubSound') !== 'false';
+        }
+
+        function playTone(freq, startTime, duration, type = 'sine', gainPeak = 0.12) {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
+            gain.gain.setValueAtTime(0, ctx.currentTime + startTime);
+            gain.gain.linearRampToValueAtTime(gainPeak, ctx.currentTime + startTime + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startTime + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + startTime);
+            osc.stop(ctx.currentTime + startTime + duration + 0.02);
+        }
+
         function playSound(name) {
-            // Lightweight stub — no audio assets bundled; keeps calls safe.
+            if (!isSoundEnabled()) return;
+            if (!getAudioContext()) return;
+
+            switch (name) {
+                case 'tap': // tile select/deselect
+                    playTone(720, 0, 0.05, 'sine', 0.07);
+                    break;
+                case 'place': // a meld was successfully played/added to/manipulated
+                    playTone(523.25, 0, 0.12, 'sine', 0.11);    // C5
+                    playTone(659.25, 0.05, 0.15, 'sine', 0.11); // E5
+                    playTone(783.99, 0.10, 0.20, 'sine', 0.13); // G5
+                    break;
+                case 'error': // invalid move / rejected action
+                    playTone(180, 0, 0.15, 'sawtooth', 0.09);
+                    playTone(140, 0.08, 0.18, 'sawtooth', 0.09);
+                    break;
+                case 'draw': // drew a tile from the pool
+                    playTone(400, 0, 0.08, 'triangle', 0.08);
+                    playTone(300, 0.05, 0.10, 'triangle', 0.06);
+                    break;
+                case 'turn': // end turn / pass to next player
+                    playTone(523.25, 0, 0.10, 'sine', 0.09);
+                    playTone(392.00, 0.08, 0.12, 'sine', 0.08);
+                    break;
+                case 'joker': // joker stolen from a table meld
+                    playTone(880, 0, 0.08, 'sine', 0.08);
+                    playTone(1108.73, 0.05, 0.08, 'sine', 0.08);
+                    playTone(1318.51, 0.10, 0.15, 'sine', 0.10);
+                    break;
+                case 'undo': // recall turn
+                    playTone(500, 0, 0.08, 'sine', 0.08);
+                    playTone(380, 0.06, 0.12, 'sine', 0.08);
+                    break;
+                case 'win': // round or match won
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                        playTone(freq, i * 0.12, 0.25, 'sine', 0.14);
+                    });
+                    break;
+                case 'oneTile': // a player's rack just dropped to one tile — urgent heads-up for everyone
+                    playTone(987.77, 0, 0.11, 'square', 0.09);
+                    playTone(987.77, 0.16, 0.11, 'square', 0.09);
+                    playTone(1318.51, 0.32, 0.22, 'square', 0.11);
+                    break;
+                case 'move': // generic/test tone
+                    playTone(600, 0, 0.08, 'sine', 0.10);
+                    break;
+                default:
+                    playTone(500, 0, 0.08, 'sine', 0.08);
+            }
         }
 
         function showToast(message, type = 'info') {
+            if (type === 'error') playSound('error');
+
             const toastContainer = document.getElementById('toast-container') || createToastContainer();
             
             const toast = document.createElement('div');
             toast.className = `toast max-w-xs px-4 py-3 rounded-2xl shadow-lg text-sm flex items-start gap-2 border bg-white ${
                 type === 'success' ? 'border-emerald-600/40 text-emerald-700' :
                 type === 'error' ? 'border-red-600/40 text-red-700' :
+                type === 'warning' ? 'border-orange-500/50 text-orange-700 font-semibold' :
                 'border-black/10 text-black'
             }`;
             
@@ -2032,6 +2170,8 @@
         // ==================== SELECTION ====================
         function toggleTileSelection(tileId, tileElement) {
             if (!isMyTurn()) return;
+
+            playSound('tap');
 
             const selected = getSelectedIds();
             if (selected.has(tileId)) {
@@ -2112,6 +2252,7 @@
             // NEW: Proper validation for groups and runs (with jokers)
             if (!isValidMeld(selectedTiles)) {
                 const type = getMeldType(selectedTiles);
+                playSound('error');
                 alert(`This selection is not a valid meld.\n\nYou need either:\n• A Group: 3–4 same number, different colors\n• A Run: 3+ consecutive numbers, same color\n\nJokers can help fill gaps or missing colors.`);
                 return;
             }
@@ -2143,6 +2284,9 @@
             };
             gameState.tableMelds.push(newMeld);
 
+            // Glow these tiles for everyone until this player's turn ends
+            gameState.newlyPlacedTileIds.push(...selectedTiles.map(t => t.id));
+
             // If initial is still not met after this meld, remember it so endTurn() can
             // return it to the rack if the player ends their turn without reaching 30.
             if (wasInitialPending) {
@@ -2166,9 +2310,11 @@
                 endGame(currentPlayer);
                 return;
             }
+            checkOneTileWarning(currentPlayer);
 
             autoSortCurrentRack();
             renderAll();
+            playSound('place');
             const meldType = getMeldType(selectedTiles);
             updateTurnStatus(`Valid ${meldType} played! You can form more melds or End Turn.`);
             
@@ -2229,6 +2375,7 @@
                 // 4,5,6 and 6,7,8). Try that before rejecting the move outright.
                 const split = trySplitMeld(combined);
                 if (!split) {
+                    playSound('error');
                     alert('Adding these tiles would not create a valid meld.\n\nThe combined tiles must still form a proper Group or Run — or split into two valid Runs (jokers allowed).');
                     return;
                 }
@@ -2238,6 +2385,9 @@
                 }));
                 gameState.tableMelds.splice(meldIndex, 1, ...newMelds);
             }
+
+            // Glow these tiles for everyone until this player's turn ends
+            gameState.newlyPlacedTileIds.push(...selectedTiles.map(t => t.id));
 
             currentPlayer.rack = remainingRack;
 
@@ -2252,8 +2402,10 @@
                 endGame(currentPlayer);
                 return;
             }
+            checkOneTileWarning(currentPlayer);
 
             renderAll();
+            playSound('place');
             updateTurnStatus('Tiles successfully added to meld!');
             saveGameToLocalStorage();
         }
@@ -2279,6 +2431,7 @@
             autoSortCurrentRack();
             clearSelection();
             renderAll();
+            playSound('draw');
             updateTurnStatus('Drew 1 tile. Your turn is now over — pass to the next player.');
 
             saveGameToLocalStorage();
@@ -2346,11 +2499,13 @@
             gameState.hasDrawnThisTurn = false;
             gameState.turnMeldIds = [];
             gameState.justDrawnTileId = null;
+            gameState.newlyPlacedTileIds = [];
             gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
             clientSelectedTileIds.clear();
 
             renderAll();
+            playSound('undo');
             updateTurnStatus('Turn recalled — back to how the board was when your turn started.');
             saveGameToLocalStorage();
         }
@@ -2449,8 +2604,10 @@
             gameState.turnMeldIds = [];
             gameState.selectedTileIds.clear();
             gameState.justDrawnTileId = null;
+            gameState.newlyPlacedTileIds = [];
 
             captureTurnSnapshot();
+            playSound('turn');
 
             if (netState.mode === 'solo') {
                 // Show pass modal - physically hand the device to the next player
@@ -2586,6 +2743,7 @@
             gameState.initialPointsThisTurn = 0;
             gameState.consecutiveEmptyTurns = 0;
             gameState.turnMeldIds = [];
+            gameState.newlyPlacedTileIds = [];
             gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
             gameState.gameStarted = true;
@@ -2680,8 +2838,9 @@
             if (target > 0 && currentScore >= target) {
                 title = `🏆 ${winner.name} wins the MATCH!`;
                 subtitle = `Reached ${currentScore} points (target: ${target})`;
-                playSound('win');
             }
+
+            playSound('win');
 
             // Record in match history
             gameState.matchHistory.push({
@@ -2785,6 +2944,7 @@
             gameState.consecutiveEmptyTurns = 0;
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
+            gameState.newlyPlacedTileIds = [];
             gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
             clientSelectedTileIds.clear();
@@ -2840,6 +3000,7 @@
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
+            gameState.newlyPlacedTileIds = [];
             gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
 
@@ -2979,12 +3140,28 @@
         function showGameMenu() {
             document.getElementById('game-menu').classList.remove('hidden');
             document.getElementById('game-menu').classList.add('flex');
+            refreshSoundMenuLabel();
         }
 
         function hideGameMenu() {
             const menu = document.getElementById('game-menu');
             menu.classList.remove('flex');
             menu.classList.add('hidden');
+        }
+
+        function refreshSoundMenuLabel() {
+            const enabled = isSoundEnabled();
+            const icon = document.getElementById('menu-sound-icon');
+            const label = document.getElementById('menu-sound-label');
+            if (icon) icon.textContent = enabled ? '🔊' : '🔇';
+            if (label) label.textContent = enabled ? 'Sound: On' : 'Sound: Off';
+        }
+
+        function toggleSoundSetting() {
+            const enabled = isSoundEnabled();
+            localStorage.setItem('rummikubSound', enabled ? 'false' : 'true');
+            refreshSoundMenuLabel();
+            if (!enabled) playSound('tap'); // audible confirmation right as it's turned back on
         }
 
         function resetCumulativeScores() {
