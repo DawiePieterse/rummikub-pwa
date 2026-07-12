@@ -331,6 +331,17 @@
                         </button>
                     </div>
 
+                    <label class="block text-sm font-medium text-amber-200 mb-2">Turn Timer</label>
+                    <select id="host-timer-select"
+                            class="w-full bg-black/5 border border-black/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm mb-6 appearance-none">
+                        <option value="0">Off</option>
+                        <option value="15">15 seconds</option>
+                        <option value="30" selected>30 seconds (default)</option>
+                        <option value="45">45 seconds</option>
+                        <option value="60">60 seconds</option>
+                        <option value="90">90 seconds</option>
+                    </select>
+
                     <button onclick="hostCreateRoom()"
                             class="w-full py-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all text-white font-bold text-lg rounded-2xl shadow-lg">
                         Create Room
@@ -445,6 +456,20 @@
                     </div>
                 </div>
 
+                <!-- Turn Timer -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-amber-200 mb-2">Turn Timer</label>
+                    <select id="solo-timer-select"
+                            class="w-full bg-black/5 border border-black/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm appearance-none">
+                        <option value="0">Off</option>
+                        <option value="15">15 seconds</option>
+                        <option value="30" selected>30 seconds (default)</option>
+                        <option value="45">45 seconds</option>
+                        <option value="60">60 seconds</option>
+                        <option value="90">90 seconds</option>
+                    </select>
+                </div>
+
                 <!-- Player Names -->
                 <div class="mb-6" id="player-names-container">
                     <label class="block text-sm font-medium text-amber-200 mb-2">Player Names</label>
@@ -481,6 +506,11 @@
             </div>
             
             <div class="flex items-center gap-x-4 text-sm">
+                <div id="turn-timer-badge" class="hidden items-center bg-black/10 px-3 py-1.5 rounded-2xl text-xs">
+                    <span class="mr-1.5">⏱</span>
+                    <span id="turn-timer-value" class="font-mono font-bold text-lg tabular-nums">30</span>
+                </div>
+
                 <div class="flex items-center bg-black/10 px-3 py-1.5 rounded-2xl text-xs">
                     <span class="text-amber-300 mr-1.5">POOL</span>
                     <span id="pool-count" class="font-mono font-bold text-lg tabular-nums">53</span>
@@ -654,6 +684,11 @@
                     <span id="menu-sound-label">Sound: On</span>
                 </button>
 
+                <button onclick="testSound()" class="w-full text-left px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-2xl flex items-center gap-x-3 text-sm">
+                    <span class="text-xl w-6">🔔</span> 
+                    <span>Test Sound</span>
+                </button>
+
                 <div class="h-px bg-black/10 my-1 mx-2"></div>
                 
                 <button onclick="hideGameMenu(); showHelp()" class="w-full text-left px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-2xl flex items-center gap-x-3 text-sm">
@@ -693,6 +728,8 @@
             justDrawnTileId: null,  // highlighted green in the rack for the rest of the turn it was drawn
             newlyPlacedTileIds: [], // tiles placed/moved on the board this turn, glow for all players until it ends
             oneTileWarning: null,   // { seq, playerName } — broadcast to everyone when a rack drops to 1 tile
+            turnTimerSeconds: 30,   // 0 = off; chosen at game start, persists for the match
+            turnDeadline: null,     // Date.now() timestamp the current turn expires at, or null if timer is off
             tileVariant: 'standard', // 'standard' (106 tiles, 2-4 players) or 'xp' (160 tiles, 5-6 players)
             pendingJokerRetrieval: null, // set when a joker is stolen; must be replayed this turn or it's undone
             cumulativeScores: {},
@@ -806,6 +843,11 @@
             document.getElementById('host-start-btn').disabled = gameState.players.length < 2;
         }
 
+        // While the host is processing a remote client's action, this holds that player's index
+        // so any rejection message gets routed back to THEM specifically — not just shown on
+        // the host's own screen, which is what happens if this isn't set (see reportActionError).
+        let actingPlayerIndex = null;
+
         function handleHostMessage(conn, msg) {
             if (!msg || !msg.t) return;
 
@@ -836,23 +878,46 @@
                 if (!gameState.gameStarted) return;
                 if (gameState.currentPlayerIndex !== index) return; // not their turn, ignore
 
-                if (msg.action === 'layMeld') {
-                    gameState.selectedTileIds = new Set(msg.tileIds || []);
-                    laySelectedAsMeld();
-                } else if (msg.action === 'addToMeld') {
-                    gameState.selectedTileIds = new Set(msg.tileIds || []);
-                    tryAddSelectedToMeld(msg.meldId);
-                } else if (msg.action === 'draw') {
-                    drawTile();
-                } else if (msg.action === 'endTurn') {
-                    endTurn();
-                } else if (msg.action === 'stealJoker') {
-                    stealJoker(msg.meldId, msg.jokerId);
-                } else if (msg.action === 'moveTableTile') {
-                    moveTableTile(msg.fromMeldId, msg.tileId, msg.target || {});
-                } else if (msg.action === 'recall') {
-                    recallTurn();
+                actingPlayerIndex = index;
+                try {
+                    if (msg.action === 'layMeld') {
+                        gameState.selectedTileIds = new Set(msg.tileIds || []);
+                        laySelectedAsMeld();
+                    } else if (msg.action === 'addToMeld') {
+                        gameState.selectedTileIds = new Set(msg.tileIds || []);
+                        tryAddSelectedToMeld(msg.meldId);
+                    } else if (msg.action === 'draw') {
+                        drawTile();
+                    } else if (msg.action === 'endTurn') {
+                        endTurn();
+                    } else if (msg.action === 'stealJoker') {
+                        stealJoker(msg.meldId, msg.jokerId);
+                    } else if (msg.action === 'moveTableTile') {
+                        moveTableTile(msg.fromMeldId, msg.tileId, msg.target || {});
+                    } else if (msg.action === 'recall') {
+                        recallTurn();
+                    }
+                } finally {
+                    actingPlayerIndex = null;
                 }
+            }
+        }
+
+        // Shows a rejection/warning for a blocked action on whichever device actually attempted
+        // it. If a remote client's action is being processed, this sends the message straight to
+        // them instead of only surfacing it on the host's own screen (which is what a plain
+        // showToast/alert call here would otherwise do, since the host is the one executing this
+        // code on the client's behalf).
+        function reportActionError(message) {
+            if (actingPlayerIndex !== null && actingPlayerIndex !== netState.myIndex) {
+                const conn = netState.conns[actingPlayerIndex];
+                if (conn && conn.open) conn.send({ t: 'error', message });
+                return;
+            }
+            if (netState.mode === 'solo') {
+                alert(message);
+            } else {
+                showToast(message, 'error');
             }
         }
 
@@ -892,6 +957,9 @@
             gameState.roundNumber = gameState.roundNumber || 1;
             gameState.gameStarted = true;
 
+            const timerSelect = document.getElementById('host-timer-select');
+            gameState.turnTimerSeconds = timerSelect ? parseInt(timerSelect.value, 10) || 0 : 30;
+
             const tiles = generateAllTiles(gameState.tileVariant);
             gameState.pool = shuffle(tiles);
 
@@ -904,6 +972,7 @@
             document.getElementById('game-screen').classList.remove('hidden');
 
             captureTurnSnapshot();
+            startTurnTimer();
             renderAll();
             updateTurnStatus('First player starts. Form your initial meld of 30+ points!');
         }
@@ -1039,6 +1108,7 @@
                 newlyPlacedTileIds: gameState.newlyPlacedTileIds,
                 hasPendingJokerRetrieval: !!(gameState.pendingJokerRetrieval && index === gameState.currentPlayerIndex),
                 oneTileWarning: gameState.oneTileWarning,
+                turnDeadline: gameState.turnDeadline,
                 winner: gameState.lastWinnerPayload || null
             };
         }
@@ -1138,9 +1208,17 @@
                 }
             }
             // Any jokers left over aren't filling an internal gap — they're extending the run
-            // beyond its real tiles. Which end they "mean" is inherently ambiguous, so they're
-            // appended at the end.
-            result.push(...jokerQueue);
+            // beyond its real tiles. Usually which end they "mean" is ambiguous, but if the run
+            // already reaches 13 there's no valid 14 to extend into — the joker(s) can only be
+            // standing in for a lower number, so they belong at the front, not the end.
+            if (jokerQueue.length > 0) {
+                const highestReal = [...result].reverse().find(t => !t.isJoker);
+                if (highestReal && highestReal.value === 13) {
+                    result.unshift(...jokerQueue);
+                } else {
+                    result.push(...jokerQueue);
+                }
+            }
             return result;
         }
 
@@ -1254,6 +1332,88 @@
             return gameState.tableMelds.every(m => isValidMeld(m.tiles));
         }
 
+        // ==================== TURN TIMER ====================
+        // Starts (or restarts) the countdown for whoever's turn it currently is. Only ever
+        // called on the authoritative side (host/solo) — clients just display the broadcast
+        // deadline. Solo pass-and-play delays this until the device is actually handed over
+        // (see confirmPassToNext) rather than starting while the pass modal is still showing.
+        let lastTickRemaining = null; // last second we played an urgency tick for, avoids repeats
+
+        function startTurnTimer() {
+            gameState.turnDeadline = gameState.turnTimerSeconds > 0
+                ? Date.now() + gameState.turnTimerSeconds * 1000
+                : null;
+            lastTickRemaining = null; // fresh countdown, no stale tick state carried over
+        }
+
+        function getActiveTurnDeadline() {
+            return netState.mode === 'client' ? (clientView ? clientView.turnDeadline : null) : gameState.turnDeadline;
+        }
+
+        function updateTurnTimerDisplay() {
+            const badge = document.getElementById('turn-timer-badge');
+            const valueEl = document.getElementById('turn-timer-value');
+            if (!badge || !valueEl) return;
+
+            const deadline = getActiveTurnDeadline();
+            if (!deadline || !gameState.gameStarted) {
+                badge.classList.add('hidden');
+                badge.classList.remove('flex');
+                return;
+            }
+
+            const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+            badge.classList.remove('hidden');
+            badge.classList.add('flex');
+            valueEl.textContent = remaining;
+            badge.classList.toggle('text-red-600', remaining <= 10);
+            badge.classList.toggle('text-black', remaining > 10);
+
+            // Urgent countdown tick, once per second, for the final 10 seconds — only on the
+            // active player's own device (the one who actually needs to hurry), growing more
+            // intense the closer it gets to zero.
+            if (remaining > 10) {
+                lastTickRemaining = null;
+            } else if (remaining >= 1 && remaining !== lastTickRemaining && isMyTurn()) {
+                lastTickRemaining = remaining;
+                playSound('tick', remaining);
+            }
+        }
+
+        // Only the host/solo device actually enforces the timeout — clients just watch the
+        // countdown. Fires once the deadline passes, applying the official time-limit penalty.
+        function handleTurnTimeout() {
+            if (netState.mode === 'client') return;
+            if (!gameState.gameStarted) return;
+
+            // Don't fire mid pass-handoff (solo) or while a modal is covering the board —
+            // the "turn" hasn't really begun yet from the player's perspective.
+            const passModal = document.getElementById('pass-modal');
+            const winModal = document.getElementById('win-modal');
+            if (passModal && passModal.classList.contains('flex')) return;
+            if (winModal && winModal.classList.contains('flex')) return;
+
+            const currentPlayer = getCurrentPlayer();
+            if (!currentPlayer) return;
+
+            gameState.turnDeadline = null; // stop re-firing while we handle this one
+
+            // Time's up: always reset the board/rack back to how the turn started, draw one
+            // tile, and pass — regardless of what was or wasn't done this turn.
+            const snap = gameState.turnSnapshot;
+            if (snap && snap.playerIndex === gameState.currentPlayerIndex) {
+                restoreFromSnapshot(snap);
+            }
+
+            const msg = "⏱️ Time's up! Your turn was reset and a tile was drawn for you.";
+            actingPlayerIndex = gameState.currentPlayerIndex; // route to whoever's turn actually timed out
+            reportActionError(msg);
+            actingPlayerIndex = null;
+            playSound('error');
+
+            drawTile(); // draws one tile and (per the earlier fix) automatically ends the turn
+        }
+
         // Calculate points for initial meld, giving jokers reasonable value
         function calculateInitialPoints(tiles) {
             if (!isValidMeld(tiles)) return 0;
@@ -1304,7 +1464,7 @@
             if (!currentPlayer) return;
 
             if (!currentPlayer.hasInitial) {
-                showToast('Make your own initial meld (30+ points) before manipulating melds on the table.', 'error');
+                reportActionError('Make your own initial meld (30+ points) before manipulating melds on the table.');
                 return;
             }
 
@@ -1317,7 +1477,7 @@
 
             const replacement = canStealJoker(meld.tiles, jokerTile, currentPlayer.rack);
             if (!replacement) {
-                showToast("You don't have a tile that can replace this joker.", "error");
+                reportActionError("You don't have a tile that can replace this joker.");
                 return;
             }
 
@@ -1666,7 +1826,7 @@
             if (!currentPlayer) return;
 
             if (!currentPlayer.hasInitial) {
-                showToast('Make your own initial meld (30+ points) before manipulating melds on the table.', 'error');
+                reportActionError('Make your own initial meld (30+ points) before manipulating melds on the table.');
                 return;
             }
 
@@ -2084,7 +2244,11 @@
         });
 
         function isSoundEnabled() {
-            return localStorage.getItem('rummikubSound') !== 'false';
+            try {
+                return localStorage.getItem('rummikubSound') !== 'false';
+            } catch (e) {
+                return true; // localStorage unavailable (e.g. private browsing) — default to on
+            }
         }
 
         function playTone(freq, startTime, duration, type = 'sine', gainPeak = 0.12) {
@@ -2103,7 +2267,7 @@
             osc.stop(ctx.currentTime + startTime + duration + 0.02);
         }
 
-        function playSound(name) {
+        function playSound(name, param) {
             if (!isSoundEnabled()) return;
             if (!getAudioContext()) return;
 
@@ -2147,6 +2311,21 @@
                     playTone(987.77, 0.16, 0.11, 'square', 0.09);
                     playTone(1318.51, 0.32, 0.22, 'square', 0.11);
                     break;
+                case 'tick': {
+                    // Countdown urgency tick — param is seconds remaining (10 down to 1).
+                    // Gets higher-pitched, louder, and sharper-sounding the closer to zero.
+                    const secondsLeft = Math.max(1, Math.min(10, param || 10));
+                    const intensity = (10 - secondsLeft) / 9; // 0 at 10s -> 1 at 1s
+                    const freq = 700 + intensity * 500;        // 700Hz -> 1200Hz
+                    const gainPeak = 0.08 + intensity * 0.14;  // 0.08 -> 0.22
+                    const waveform = secondsLeft <= 3 ? 'square' : 'sine';
+                    playTone(freq, 0, 0.09, waveform, gainPeak);
+                    if (secondsLeft <= 3) {
+                        // extra sharp double-beat in the final 3 seconds for maximum urgency
+                        playTone(freq * 1.25, 0.11, 0.08, 'square', gainPeak * 0.85);
+                    }
+                    break;
+                }
                 case 'move': // generic/test tone
                     playTone(600, 0, 0.08, 'sine', 0.10);
                     break;
@@ -2274,7 +2453,7 @@
             if (!isValidMeld(selectedTiles)) {
                 const type = getMeldType(selectedTiles);
                 playSound('error');
-                alert(`This selection is not a valid meld.\n\nYou need either:\n• A Group: 3–4 same number, different colors\n• A Run: 3+ consecutive numbers, same color\n\nJokers can help fill gaps or missing colors.`);
+                reportActionError(`This selection is not a valid meld.\n\nYou need either:\n• A Group: 3–4 same number, different colors\n• A Run: 3+ consecutive numbers, same color\n\nJokers can help fill gaps or missing colors.`);
                 return;
             }
 
@@ -2363,7 +2542,7 @@
 
             // You can't touch melds already on the table until your own initial meld is done
             if (!currentPlayer.hasInitial) {
-                showToast('Make your own initial meld (30+ points) before adding to melds on the table.', 'error');
+                reportActionError('Make your own initial meld (30+ points) before adding to melds on the table.');
                 return;
             }
 
@@ -2397,7 +2576,7 @@
                 const split = trySplitMeld(combined);
                 if (!split) {
                     playSound('error');
-                    alert('Adding these tiles would not create a valid meld.\n\nThe combined tiles must still form a proper Group or Run — or split into two valid Runs (jokers allowed).');
+                    reportActionError('Adding these tiles would not create a valid meld.\n\nThe combined tiles must still form a proper Group or Run — or split into two valid Runs (jokers allowed).');
                     return;
                 }
                 const newMelds = split.map((meldTiles, i) => ({
@@ -2453,9 +2632,12 @@
             clearSelection();
             renderAll();
             playSound('draw');
-            updateTurnStatus('Drew 1 tile. Your turn is now over — pass to the next player.');
 
             saveGameToLocalStorage();
+
+            // Drawing always ends your turn — no further play is possible, so just pass
+            // straight to the next player instead of waiting for a separate End Turn tap.
+            endTurn();
         }
 
         // Returns any melds this player created this turn while still working toward
@@ -2496,20 +2678,10 @@
 
         // Restores the board and the active player's rack to exactly how they were when this
         // turn started, undoing every play/draw/manipulation made so far this turn.
-        function recallTurn() {
-            if (netState.mode === 'client') {
-                if (!isMyTurn()) return;
-                sendAction({ action: 'recall' });
-                return;
-            }
-
-            const snap = gameState.turnSnapshot;
-            if (!snap || snap.playerIndex !== gameState.currentPlayerIndex) {
-                showToast("Nothing to recall.", 'error');
-                return;
-            }
-
-            const player = gameState.players[gameState.currentPlayerIndex];
+        // Restores the board and rack to the given turn-start snapshot. Shared by the manual
+        // Recall Turn action and the automatic timer-timeout penalty for an incomplete move.
+        function restoreFromSnapshot(snap) {
+            const player = gameState.players[snap.playerIndex];
             player.rack = snap.rack.map(t => ({ ...t }));
             player.hasInitial = snap.hasInitial;
             gameState.tableMelds = snap.tableMelds.map(m => ({ id: m.id, tiles: m.tiles.map(t => ({ ...t })) }));
@@ -2524,6 +2696,22 @@
             gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
             clientSelectedTileIds.clear();
+        }
+
+        function recallTurn() {
+            if (netState.mode === 'client') {
+                if (!isMyTurn()) return;
+                sendAction({ action: 'recall' });
+                return;
+            }
+
+            const snap = gameState.turnSnapshot;
+            if (!snap || snap.playerIndex !== gameState.currentPlayerIndex) {
+                reportActionError("Nothing to recall.");
+                return;
+            }
+
+            restoreFromSnapshot(snap);
 
             renderAll();
             playSound('undo');
@@ -2545,24 +2733,14 @@
             // end yet — per the rules, only legitimate sets may remain on the table. Recall Turn
             // is always available as an escape hatch if they want to undo everything instead.
             if (!isBoardFullyValid()) {
-                const msg = "Not so fast — some melds on the table aren't valid yet. Finish rearranging them, or use Recall Turn to undo everything.";
-                if (netState.mode === 'solo') {
-                    alert(msg);
-                } else {
-                    showToast(msg, 'error');
-                }
+                reportActionError("Not so fast — some melds on the table aren't valid yet. Finish rearranging them, or use Recall Turn to undo everything.");
                 return;
             }
 
             // Official rule: a joker retrieved from the table must be replayed into a set this
             // same turn. If that never happened, undo the whole retrieval before anything else.
             if (revertPendingJokerRetrieval(currentPlayer)) {
-                const msg = "You didn't replay the joker you took — it's been put back where it was.";
-                if (netState.mode === 'solo') {
-                    alert(msg);
-                } else {
-                    showToast(msg, 'error');
-                }
+                reportActionError("You didn't replay the joker you took — it's been put back where it was.");
             }
 
             // If they haven't made their initial meld yet, any melds placed this turn
@@ -2572,12 +2750,7 @@
                 const hadPendingMelds = revertTurnMelds(currentPlayer);
 
                 if (hadPendingMelds) {
-                    const msg = `Initial meld needs 30+ points (you had ${gameState.initialPointsThisTurn}) — those tiles were returned to your rack.`;
-                    if (netState.mode === 'solo') {
-                        alert(msg);
-                    } else {
-                        showToast(msg, 'error');
-                    }
+                    reportActionError(`Initial meld needs 30+ points (you had ${gameState.initialPointsThisTurn}) — those tiles were returned to your rack.`);
                     gameState.initialPointsThisTurn = 0;
 
                     if (gameState.pool.length > 0) {
@@ -2644,12 +2817,15 @@
             playSound('turn');
 
             if (netState.mode === 'solo') {
-                // Show pass modal - physically hand the device to the next player
+                // Show pass modal - physically hand the device to the next player. Timer doesn't
+                // start until they confirm they're ready (see confirmPassToNext).
+                gameState.turnDeadline = null;
                 document.getElementById('pass-to-name').textContent = nextPlayer.name;
                 document.getElementById('pass-modal').classList.remove('hidden');
                 document.getElementById('pass-modal').classList.add('flex');
             } else {
                 // Networked: each player has their own device, turn just switches instantly
+                startTurnTimer();
                 renderAll();
                 updateTurnStatus('');
             }
@@ -2663,7 +2839,7 @@
             modal.classList.remove('flex');
             modal.classList.add('hidden');
 
-            // Render new player's view
+            startTurnTimer();
             renderAll();
             updateTurnStatus('');
         }
@@ -2788,6 +2964,9 @@
             gameState.matchHistory = [];
             gameState.roundNumber = 1;
 
+            const timerSelect = document.getElementById('solo-timer-select');
+            gameState.turnTimerSeconds = timerSelect ? parseInt(timerSelect.value, 10) || 0 : 30;
+
             // Generate and deal tiles
             const tiles = generateAllTiles(gameState.tileVariant);
             const shuffled = shuffle(tiles);
@@ -2806,6 +2985,7 @@
 
             // Initial render
             captureTurnSnapshot();
+            startTurnTimer();
             renderAll();
             updateTurnStatus('First player starts. Form your initial meld of 30+ points!');
 
@@ -2994,6 +3174,7 @@
 
             renderAll();
             captureTurnSnapshot();
+            startTurnTimer();
             updateTurnStatus(`Round ${gameState.roundNumber} started. First player begins.`);
             saveGameToLocalStorage();
         }
@@ -3048,6 +3229,7 @@
 
             renderAll();
             captureTurnSnapshot();
+            startTurnTimer();
             updateTurnStatus('Game restarted. First player starts.');
             saveGameToLocalStorage();
         }
@@ -3074,6 +3256,7 @@
                     matchHistory: gameState.matchHistory,
                     roundNumber: gameState.roundNumber,
                     turnSnapshot: gameState.turnSnapshot,
+                    turnTimerSeconds: gameState.turnTimerSeconds,
                     gameStarted: true
                 };
                 localStorage.setItem('rummikubGameState', JSON.stringify(serializable));
@@ -3107,6 +3290,8 @@
                 netState.mode = 'solo'; // must be set before captureTurnSnapshot() (uses getCurrentPlayer())
                 gameState.turnSnapshot = parsed.turnSnapshot || null;
                 if (!gameState.turnSnapshot) captureTurnSnapshot(); // older save from before Recall existed
+                gameState.turnTimerSeconds = parsed.turnTimerSeconds !== undefined ? parsed.turnTimerSeconds : 30;
+                startTurnTimer(); // give a fresh full countdown rather than guessing elapsed time
 
                 // Show game screen
                 document.getElementById('mode-screen').classList.add('hidden');
@@ -3198,6 +3383,24 @@
             if (!enabled) playSound('tap'); // audible confirmation right as it's turned back on
         }
 
+        function testSound() {
+            if (!isSoundEnabled()) {
+                showToast('Sound is turned off — enable it above first.', 'warning');
+                return;
+            }
+            const ctx = getAudioContext();
+            if (!ctx) {
+                showToast("This browser doesn't support Web Audio — sounds can't play here.", 'error');
+                return;
+            }
+            if (ctx.state !== 'running') {
+                showToast(`Audio is "${ctx.state}", not running — check your iPad's mute switch and volume.`, 'warning');
+            } else {
+                showToast('🔔 Playing test sound now...', 'info');
+            }
+            playSound('win');
+        }
+
         function resetCumulativeScores() {
             hideGameMenu();
             if (!confirm('Reset cumulative scores for all players?')) return;
@@ -3264,6 +3467,8 @@
 • Jokers are fully supported for forming/adding to melds in this version
 • Steal a joker from a table meld: tap the pulsing joker once you have your own initial meld and a matching tile in your rack — it swaps in for you
 • 5-6 players: choose the "XP" tile set (160 tiles, 4 jokers) when starting a game or hosting a room — Standard (106 tiles) only supports up to 4
+• Turn Timer: set a per-turn time limit (default 30s, or off) when starting a game. Running out of time while you haven't played draws a tile for you automatically; running out mid-manipulation undoes it and draws 3 penalty tiles, per the official rules
+• Drawing a tile always ends your turn immediately — no need to tap End Turn afterward
 • Drag & drop: drag rack tiles onto "Drop here" to form a new meld, or onto an existing meld to add to it. Once you have your own initial meld, you can also drag tiles already on the table — onto another meld, or back to your own rack. A meld will split in two if you pull a tile out of the middle of a long run and both halves are still valid; moves that would leave an invalid meld behind are rejected
 
 Hotseat only (pass the iPad). More manipulation & joker stealing coming soon.
@@ -3287,6 +3492,16 @@ Have fun on the Weskus!`;
         function init() {
             initPlayerCountButtons();
             registerServiceWorker();
+
+            // Turn timer: one shared loop updates the visible countdown everywhere, and (on the
+            // authoritative host/solo device only) enforces the timeout once it passes.
+            setInterval(() => {
+                updateTurnTimerDisplay();
+                const deadline = getActiveTurnDeadline();
+                if (netState.mode !== 'client' && deadline && Date.now() >= deadline) {
+                    handleTurnTimeout();
+                }
+            }, 500);
 
             // Try to resume a previous solo (pass & play) game
             const resumed = loadGameFromLocalStorage();
