@@ -72,6 +72,10 @@
             flex-basis: 100%;
             width: 100%;
         }
+        #table-area .meld-section-divider {
+            flex-basis: 100%;
+            width: 100%;
+        }
 
         /* ==================== DRAG AND DROP ==================== */
         .tile[data-draggable="true"] {
@@ -1180,6 +1184,47 @@
             return null;
         }
 
+        // If any two melds on the table can combine into one valid meld (e.g. a 1-2-3 run and a
+        // 4-5-6 run of the same color becoming a single 1-2-3-4-5-6 run), merge them automatically.
+        // Runs until no more merges are possible, since combining two melds can enable a further
+        // merge with a third (e.g. 1-3, 4-6, 7-9 all merging into one 1-9 run).
+        //
+        // Melds still tracked in turnMeldIds are deliberately excluded: those belong to a player
+        // still working toward their initial 30 points and may need to be pulled back off the
+        // table intact if the turn ends short. Merging one into an older, already-settled meld
+        // would mean reverting it later rips out tiles that were never part of this turn's play.
+        // They become eligible for merging again as soon as the turn resolves either way.
+        function autoMergeMelds() {
+            let mergedAny = false;
+            let mergedThisPass = true;
+            const pendingIds = new Set(gameState.turnMeldIds || []);
+
+            while (mergedThisPass) {
+                mergedThisPass = false;
+                outer:
+                for (let i = 0; i < gameState.tableMelds.length; i++) {
+                    for (let j = i + 1; j < gameState.tableMelds.length; j++) {
+                        const meldA = gameState.tableMelds[i];
+                        const meldB = gameState.tableMelds[j];
+                        if (pendingIds.has(meldA.id) || pendingIds.has(meldB.id)) continue;
+
+                        const combined = [...meldA.tiles, ...meldB.tiles];
+
+                        if (isValidMeld(combined)) {
+                            const merged = { id: meldA.id, tiles: combined };
+                            gameState.tableMelds = gameState.tableMelds.filter((m, idx) => idx !== i && idx !== j);
+                            gameState.tableMelds.push(merged);
+                            mergedThisPass = true;
+                            mergedAny = true;
+                            break outer;
+                        }
+                    }
+                }
+            }
+
+            return mergedAny;
+        }
+
         // Calculate points for initial meld, giving jokers reasonable value
         function calculateInitialPoints(tiles) {
             if (!isValidMeld(tiles)) return 0;
@@ -1717,13 +1762,49 @@
             document.getElementById('rack-count').textContent = rack.length;
         }
 
+        // Board organization: runs are clustered together by color (so a same-color run family
+        // reads as one block), sitting above groups, which are sorted highest-number-first below.
+        // Makes it much easier to see what belongs together on a crowded board.
+        function getMeldSortInfo(meld) {
+            const colorOrder = { red: 0, blue: 1, yellow: 2, black: 3 };
+            const nonJokers = meld.tiles.filter(t => !t.isJoker);
+            const type = getMeldType(meld.tiles);
+
+            if (type === 'group') {
+                const value = nonJokers.length > 0 ? nonJokers[0].value : 0;
+                return { type: 'group', value };
+            }
+
+            // run (or a degenerate/all-joker meld — falls back to red so it still renders somewhere)
+            const color = nonJokers.length > 0 ? nonJokers[0].color : 'red';
+            const minValue = nonJokers.length > 0 ? Math.min(...nonJokers.map(t => t.value)) : 0;
+            return { type: 'run', color, colorOrder: colorOrder[color] ?? 99, minValue };
+        }
+
+        function sortMeldsForBoard(melds) {
+            return [...melds].sort((a, b) => {
+                const infoA = getMeldSortInfo(a);
+                const infoB = getMeldSortInfo(b);
+
+                // Runs (clustered by color) before groups
+                if (infoA.type !== infoB.type) return infoA.type === 'run' ? -1 : 1;
+
+                if (infoA.type === 'run') {
+                    if (infoA.colorOrder !== infoB.colorOrder) return infoA.colorOrder - infoB.colorOrder;
+                    return infoA.minValue - infoB.minValue;
+                }
+                return infoA.value - infoB.value; // groups: ascending by number
+            });
+        }
+
         function renderTable() {
             const container = document.getElementById('table-area');
             const noMeldsMsg = document.getElementById('no-melds-message');
-            const melds = netState.mode === 'client' ? (clientView ? clientView.tableMelds : []) : gameState.tableMelds;
+            const meldsRaw = netState.mode === 'client' ? (clientView ? clientView.tableMelds : []) : gameState.tableMelds;
+            const melds = sortMeldsForBoard(meldsRaw);
 
             // Clear previous melds and any old new-meld zone
-            container.querySelectorAll('.meld-card, .new-meld-zone').forEach(el => el.remove());
+            container.querySelectorAll('.meld-card, .new-meld-zone, .meld-section-divider').forEach(el => el.remove());
 
             // Always show New Meld Drop Zone at the top
             const newMeldZone = document.createElement('div');
@@ -1759,7 +1840,16 @@
             }
             const canStealRightNow = isMyTurn() && myHasInitial;
 
-            melds.forEach((meld, index) => {
+            let lastType = null;
+            melds.forEach((meld) => {
+                const meldInfo = getMeldSortInfo(meld);
+                if (lastType === 'run' && meldInfo.type === 'group') {
+                    const divider = document.createElement('div');
+                    divider.className = 'meld-section-divider border-t border-black/10 my-1';
+                    container.appendChild(divider);
+                }
+                lastType = meldInfo.type;
+
                 const meldCard = document.createElement('div');
                 meldCard.className = `meld-card rounded-2xl p-2 cursor-pointer active:scale-[0.985] transition`;
                 meldCard.title = "Click to add your selected tiles to this meld";
@@ -1842,6 +1932,8 @@
         }
 
         function renderAll() {
+            if (netState.mode !== 'client') autoMergeMelds();
+
             renderPlayerBanner();
             renderRack();
             renderTable();
