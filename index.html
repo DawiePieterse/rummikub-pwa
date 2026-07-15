@@ -145,6 +145,17 @@
             50% { box-shadow: 0 0 14px 5px rgba(10, 132, 255, 0.85), 0 4px 10px -2px rgb(0 0 0 / 0.35); }
         }
 
+        #turn-timer-ring {
+            transition: background 0.3s linear;
+        }
+        #turn-timer-badge.urgent #turn-timer-ring {
+            animation: timerUrgentPulse 1s ease-in-out infinite;
+        }
+        @keyframes timerUrgentPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+
         .tile.joker {
             background: linear-gradient(135deg, #BF5AF2, #FF375F);
         }
@@ -506,9 +517,12 @@
             </div>
             
             <div class="flex items-center gap-x-4 text-sm">
-                <div id="turn-timer-badge" class="hidden items-center bg-black/10 px-3 py-1.5 rounded-2xl text-xs">
-                    <span class="mr-1.5">⏱</span>
-                    <span id="turn-timer-value" class="font-mono font-bold text-lg tabular-nums">30</span>
+                <div id="turn-timer-badge" class="hidden items-center justify-center flex-shrink-0" style="width: 2.6rem; height: 2.6rem;">
+                    <div id="turn-timer-ring" class="w-full h-full rounded-full flex items-center justify-center transition-colors" style="background: conic-gradient(#0A84FF 0%, rgba(0,0,0,0.08) 0%);">
+                        <div class="bg-white rounded-full flex items-center justify-center" style="width: 78%; height: 78%;">
+                            <span id="turn-timer-value" class="font-mono font-bold text-sm tabular-nums">30</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex items-center bg-black/10 px-3 py-1.5 rounded-2xl text-xs">
@@ -1123,6 +1137,7 @@
                 oneTileWarning: gameState.oneTileWarning,
                 lastActionSound: gameState.lastActionSound,
                 turnDeadline: gameState.turnDeadline,
+                turnTimerSeconds: gameState.turnTimerSeconds,
                 winner: gameState.lastWinnerPayload || null
             };
         }
@@ -1364,6 +1379,11 @@
             return netState.mode === 'client' ? (clientView ? clientView.turnDeadline : null) : gameState.turnDeadline;
         }
 
+        function getActiveTurnTimerTotal() {
+            const total = netState.mode === 'client' ? (clientView ? clientView.turnTimerSeconds : 0) : gameState.turnTimerSeconds;
+            return total || 30; // guard against 0/undefined causing a divide-by-zero in the progress calc
+        }
+
         function isGameActiveForDisplay() {
             return netState.mode === 'client' ? !!(clientView && clientView.gameStarted) : gameState.gameStarted;
         }
@@ -1371,7 +1391,8 @@
         function updateTurnTimerDisplay() {
             const badge = document.getElementById('turn-timer-badge');
             const valueEl = document.getElementById('turn-timer-value');
-            if (!badge || !valueEl) return;
+            const ring = document.getElementById('turn-timer-ring');
+            if (!badge || !valueEl || !ring) return;
 
             const deadline = getActiveTurnDeadline();
             if (!deadline || !isGameActiveForDisplay()) {
@@ -1380,12 +1401,21 @@
                 return;
             }
 
+            const total = getActiveTurnTimerTotal();
             const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+            const fraction = Math.max(0, Math.min(1, remaining / total));
+
             badge.classList.remove('hidden');
             badge.classList.add('flex');
             valueEl.textContent = remaining;
-            badge.classList.toggle('text-red-600', remaining <= 10);
-            badge.classList.toggle('text-black', remaining > 10);
+
+            // Ring color shifts from calm blue, through amber, to urgent red as it depletes —
+            // and the conic-gradient sweep visually represents exactly how much time is left,
+            // which reads far faster at a glance than a bare number.
+            const color = remaining <= 10 ? '#FF453A' : remaining <= (total * 0.4) ? '#FF9F0A' : '#0A84FF';
+            ring.style.background = `conic-gradient(${color} ${fraction * 100}%, rgba(0,0,0,0.08) 0%)`;
+            valueEl.parentElement.style.color = color;
+            badge.classList.toggle('urgent', remaining <= 10 && remaining >= 1);
 
             // Urgent countdown tick, once per second, for the final 10 seconds — only on the
             // active player's own device (the one who actually needs to hurry), growing more
@@ -1425,9 +1455,10 @@
 
             const msg = "⏱️ Time's up! Your turn was reset and a tile was drawn for you.";
             actingPlayerIndex = gameState.currentPlayerIndex; // route to whoever's turn actually timed out
+            const wasSolo = netState.mode === 'solo';
             reportActionError(msg);
             actingPlayerIndex = null;
-            playSound('error');
+            if (wasSolo) playSound('error'); // alert() doesn't auto-play a sound like showToast does
 
             drawTile(); // draws one tile and (per the earlier fix) automatically ends the turn
         }
@@ -2274,17 +2305,43 @@
         function playTone(freq, startTime, duration, type = 'sine', gainPeak = 0.12) {
             const ctx = getAudioContext();
             if (!ctx) return;
+            const t0 = ctx.currentTime + startTime;
+
+            // Gentle lowpass rounds off harsh square/sawtooth edges into something warmer,
+            // more like a real chime than a raw beep, without changing the pitch or timing.
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(Math.min(freq * 4.5, 9000), t0);
+            filter.Q.setValueAtTime(0.7, t0);
+
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.type = type;
-            osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
-            gain.gain.setValueAtTime(0, ctx.currentTime + startTime);
-            gain.gain.linearRampToValueAtTime(gainPeak, ctx.currentTime + startTime + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startTime + duration);
-            osc.connect(gain);
+            osc.frequency.setValueAtTime(freq, t0);
+            gain.gain.setValueAtTime(0, t0);
+            gain.gain.linearRampToValueAtTime(gainPeak, t0 + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+            osc.connect(filter);
+            filter.connect(gain);
             gain.connect(ctx.destination);
-            osc.start(ctx.currentTime + startTime);
-            osc.stop(ctx.currentTime + startTime + duration + 0.02);
+            osc.start(t0);
+            osc.stop(t0 + duration + 0.02);
+
+            // A quiet octave-up layer adds a touch of shimmer/richness, like a real chime
+            // having overtones, instead of a single flat frequency.
+            if (type === 'sine' && gainPeak >= 0.08) {
+                const osc2 = ctx.createOscillator();
+                const gain2 = ctx.createGain();
+                osc2.type = 'sine';
+                osc2.frequency.setValueAtTime(freq * 2, t0);
+                gain2.gain.setValueAtTime(0, t0);
+                gain2.gain.linearRampToValueAtTime(gainPeak * 0.18, t0 + 0.01);
+                gain2.gain.exponentialRampToValueAtTime(0.001, t0 + duration * 0.7);
+                osc2.connect(gain2);
+                gain2.connect(ctx.destination);
+                osc2.start(t0);
+                osc2.stop(t0 + duration + 0.02);
+            }
         }
 
         // Queues a sound to be broadcast in the next state update, so every connected client
@@ -2481,7 +2538,7 @@
             // NEW: Proper validation for groups and runs (with jokers)
             if (!isValidMeld(selectedTiles)) {
                 const type = getMeldType(selectedTiles);
-                playSound('error');
+                if (netState.mode === 'solo') playSound('error'); // alert() doesn't auto-play like showToast does
                 reportActionError(`This selection is not a valid meld.\n\nYou need either:\n• A Group: 3–4 same number, different colors\n• A Run: 3+ consecutive numbers, same color\n\nJokers can help fill gaps or missing colors.`);
                 return;
             }
@@ -2605,7 +2662,7 @@
                 // 4,5,6 and 6,7,8). Try that before rejecting the move outright.
                 const split = trySplitMeld(combined);
                 if (!split) {
-                    playSound('error');
+                    if (netState.mode === 'solo') playSound('error'); // alert() doesn't auto-play like showToast does
                     reportActionError('Adding these tiles would not create a valid meld.\n\nThe combined tiles must still form a proper Group or Run — or split into two valid Runs (jokers allowed).');
                     return;
                 }
