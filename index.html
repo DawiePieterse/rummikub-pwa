@@ -37,12 +37,19 @@
     </script>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+            font-family: ui-rounded, -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'SF Pro Text', system-ui, sans-serif;
             -webkit-font-smoothing: antialiased;
         }
 
+        /* Uniform typography: everything inherits the same rounded family. Former mono/title
+           variants now differ only in weight/size, not typeface, for a consistent look. */
+        .font-mono {
+            font-family: inherit !important;
+            font-feature-settings: "tnum";
+            font-variant-numeric: tabular-nums;
+        }
+
         .title-font {
-            font-family: ui-rounded, -apple-system, 'SF Pro Rounded', system-ui, sans-serif;
             font-weight: 800;
             letter-spacing: -0.02em;
         }
@@ -96,25 +103,26 @@
         }
 
         .table-felt {
-            background: #E9E9EE;
+            background: linear-gradient(165deg, #ECEDF2 0%, #E6E7EE 100%);
             background-image:
-                radial-gradient(circle at 25% 20%, rgba(10, 132, 255, 0.07) 0%, transparent 55%),
-                radial-gradient(circle at 80% 80%, rgba(191, 90, 242, 0.06) 0%, transparent 55%);
-            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06), inset 0 0 30px rgba(0,0,0,0.04);
+                radial-gradient(circle at 25% 20%, rgba(10, 132, 255, 0.08) 0%, transparent 55%),
+                radial-gradient(circle at 80% 80%, rgba(191, 90, 242, 0.07) 0%, transparent 55%),
+                radial-gradient(circle at 55% 50%, rgba(48, 209, 88, 0.03) 0%, transparent 60%);
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06), inset 0 2px 20px rgba(0,0,0,0.05);
         }
 
         .tile {
-            width: 3.25rem;
-            height: 4.5rem;
-            font-size: 1.75rem; /* base size for the number inside — overridden per-instance for
+            width: 2.7rem;
+            height: 3.7rem;
+            font-size: 1.4rem; /* base size for the number inside — overridden per-instance for
                                     crowded racks / table tiles; the number inherits this */
             font-feature-settings: "tnum";
-            box-shadow: 0 1px 0 rgba(255,255,255,0.5) inset, 0 4px 10px -2px rgb(0 0 0 / 0.45);
+            box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset, 0 -2px 4px rgba(0,0,0,0.05) inset, 0 3px 8px -2px rgb(0 0 0 / 0.35);
             transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), 
                         box-shadow 0.1s cubic-bezier(0.4, 0.0, 0.2, 1);
             user-select: none;
             position: relative;
-            background-color: #F5F1E8; /* ivory ceramic tile face */
+            background: linear-gradient(170deg, #FAF7F0 0%, #F5F1E8 55%, #EFEAE0 100%); /* ivory ceramic with subtle sheen */
         }
         
         .tile:active {
@@ -161,11 +169,11 @@
         }
 
         .meld-card {
-            background: rgba(255,255,255,0.9);
+            background: rgba(255,255,255,0.92);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(0,0,0,0.08);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.07);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05), 0 4px 12px -4px rgba(0,0,0,0.08);
             transition: all 0.2s ease;
         }
 
@@ -307,7 +315,7 @@
                         class="w-full py-3.5 bg-black/10 hover:bg-black/20 active:bg-black/30 transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2">
                     <span>Pass &amp; Play (One Device)</span>
                 </button>
-                <p class="text-center text-[10px] text-amber-300/50 mt-1">Each iPad gets its own rack. One person hosts, everyone else joins with the room code — all on the same WiFi network.</p>
+                <p class="text-center text-xs text-amber-300/50 mt-1">Each iPad gets its own rack. One person hosts, everyone else joins with the room code — all on the same WiFi network.</p>
             </div>
 
             <div class="text-center mt-6 text-xs text-amber-300/40">
@@ -333,12 +341,12 @@
                         <button type="button" onclick="selectHostTileVariant('standard')" data-variant="standard"
                                 class="host-tile-variant-btn active flex flex-col items-center justify-center py-2.5 rounded-2xl border border-amber-400 bg-amber-900/30 transition">
                             <span class="text-sm font-bold">Standard</span>
-                            <span class="text-[10px] text-amber-300/70">106 tiles • up to 4</span>
+                            <span class="text-xs text-amber-300/70">106 tiles • up to 4</span>
                         </button>
                         <button type="button" onclick="selectHostTileVariant('xp')" data-variant="xp"
                                 class="host-tile-variant-btn flex flex-col items-center justify-center py-2.5 rounded-2xl border border-black/20 bg-black/5 hover:bg-black/10 transition">
                             <span class="text-sm font-bold">XP</span>
-                            <span class="text-[10px] text-amber-300/70">160 tiles • up to 6</span>
+                            <span class="text-xs text-amber-300/70">160 tiles • up to 6</span>
                         </button>
                     </div>
 
@@ -370,7 +378,7 @@
                             class="w-full py-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-emerald-900/50 disabled:text-black/40 transition-all text-white font-bold text-lg rounded-2xl shadow-lg">
                         Start Game
                     </button>
-                    <p class="text-center text-[10px] text-amber-300/50 mt-3" id="host-lobby-hint">Need at least 2 players. Deals 14 tiles each once started.</p>
+                    <p class="text-center text-xs text-amber-300/50 mt-3" id="host-lobby-hint">Need at least 2 players. Deals 14 tiles each once started.</p>
                 </div>
             </div>
             <button onclick="backToModeScreen()" class="w-full text-center mt-4 text-sm text-black/50 hover:text-black/80">← Back</button>
@@ -430,12 +438,12 @@
                         <button onclick="selectTileVariant('standard')" data-variant="standard"
                                 class="tile-variant-btn active flex flex-col items-center justify-center py-2.5 rounded-2xl border border-amber-400 bg-amber-900/30 transition">
                             <span class="text-sm font-bold">Standard</span>
-                            <span class="text-[10px] text-amber-300/70">106 tiles • 2-4 players</span>
+                            <span class="text-xs text-amber-300/70">106 tiles • 2-4 players</span>
                         </button>
                         <button onclick="selectTileVariant('xp')" data-variant="xp"
                                 class="tile-variant-btn flex flex-col items-center justify-center py-2.5 rounded-2xl border border-black/20 bg-black/5 hover:bg-black/10 transition">
                             <span class="text-sm font-bold">XP</span>
-                            <span class="text-[10px] text-amber-300/70">160 tiles • 5-6 players</span>
+                            <span class="text-xs text-amber-300/70">160 tiles • 5-6 players</span>
                         </button>
                     </div>
                 </div>
@@ -446,23 +454,23 @@
                     <div class="grid grid-cols-3 gap-2" id="player-count-buttons">
                         <button onclick="selectPlayerCount(2)" class="player-count-btn active flex flex-col items-center justify-center py-3 rounded-2xl border border-amber-400 bg-amber-900/30 transition" data-count="2">
                             <span class="text-2xl font-bold">2</span>
-                            <span class="text-[10px] text-amber-300/70">Players</span>
+                            <span class="text-xs text-amber-300/70">Players</span>
                         </button>
                         <button onclick="selectPlayerCount(3)" class="player-count-btn flex flex-col items-center justify-center py-3 rounded-2xl border border-black/20 bg-black/5 hover:bg-black/10 transition" data-count="3">
                             <span class="text-2xl font-bold">3</span>
-                            <span class="text-[10px] text-amber-300/70">Players</span>
+                            <span class="text-xs text-amber-300/70">Players</span>
                         </button>
                         <button onclick="selectPlayerCount(4)" class="player-count-btn flex flex-col items-center justify-center py-3 rounded-2xl border border-black/20 bg-black/5 hover:bg-black/10 transition" data-count="4">
                             <span class="text-2xl font-bold">4</span>
-                            <span class="text-[10px] text-amber-300/70">Players</span>
+                            <span class="text-xs text-amber-300/70">Players</span>
                         </button>
                         <button onclick="selectPlayerCount(5)" data-requires-xp="true" disabled class="player-count-btn flex flex-col items-center justify-center py-3 rounded-2xl border border-black/10 bg-black/[0.02] text-black/30 cursor-not-allowed transition" data-count="5">
                             <span class="text-2xl font-bold">5</span>
-                            <span class="text-[10px] text-amber-300/50 player-count-sublabel">XP only</span>
+                            <span class="text-xs text-amber-300/50 player-count-sublabel">XP only</span>
                         </button>
                         <button onclick="selectPlayerCount(6)" data-requires-xp="true" disabled class="player-count-btn flex flex-col items-center justify-center py-3 rounded-2xl border border-black/10 bg-black/[0.02] text-black/30 cursor-not-allowed transition" data-count="6">
                             <span class="text-2xl font-bold">6</span>
-                            <span class="text-[10px] text-amber-300/50 player-count-sublabel">XP only</span>
+                            <span class="text-xs text-amber-300/50 player-count-sublabel">XP only</span>
                         </button>
                     </div>
                 </div>
@@ -495,7 +503,7 @@
                     <span class="text-2xl">→</span>
                 </button>
                 
-                <p class="text-center text-[10px] text-amber-300/50 mt-4">Hotseat • Pass &amp; Play mode • Works fully offline</p>
+                <p class="text-center text-xs text-amber-300/50 mt-4">Hotseat • Pass &amp; Play mode • Works fully offline</p>
             </div>
             
             <div class="text-center mt-6 text-xs text-amber-300/40">
@@ -570,11 +578,11 @@
                              class="w-3.5 h-3.5 rounded-full bg-amber-400 ring-2 ring-amber-400/30 flex-shrink-0"></div>
                         <div class="min-w-0">
                             <div id="current-player-name" class="font-semibold text-lg leading-tight truncate">Player 1</div>
-                            <span id="initial-status" class="text-[10px] px-2 py-0.5 bg-black/10 rounded-full inline-block mt-1">Initial pending</span>
+                            <span id="initial-status" class="text-xs px-2 py-0.5 bg-black/10 rounded-full inline-block mt-1">Initial pending</span>
                         </div>
                     </div>
                     <div class="text-right flex-shrink-0 pl-2">
-                        <div class="text-[10px] text-amber-300/70">YOUR RACK</div>
+                        <div class="text-xs text-amber-300/70">YOUR RACK</div>
                         <div id="rack-count" class="font-mono text-2xl font-bold tabular-nums leading-none">14</div>
                     </div>
                 </div>
@@ -588,40 +596,38 @@
                 </div>
 
                 <!-- Action Bar -->
-                <div class="p-4 pt-2 border-t border-black/10 flex-shrink-0">
-                    <div class="grid grid-cols-2 gap-2">
+                <div class="p-3 pt-2 border-t border-black/10 flex-shrink-0">
+                    <div class="grid grid-cols-2 gap-1.5">
                         
                         <button onclick="laySelectedAsMeld()" 
                                 id="btn-lay-meld"
-                                class="col-span-2 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-emerald-900/50 disabled:text-black/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-2xl text-sm text-white flex items-center justify-center gap-x-2 shadow">
-                            <span>Play Selected<br><span class="text-[10px] opacity-75">as Valid Meld</span></span>
+                                class="col-span-2 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:bg-emerald-900/50 disabled:text-black/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-xl text-sm text-white flex items-center justify-center gap-x-2 shadow">
+                            <span>Play Selected</span>
                         </button>
                         
                         <button onclick="drawTile()" 
                                 id="btn-draw"
-                                class="py-3.5 px-4 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 disabled:bg-sky-900/40 disabled:text-black/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-2xl text-sm text-white flex items-center justify-center gap-x-2">
+                                class="py-2 px-3 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 disabled:bg-sky-900/40 disabled:text-black/40 disabled:cursor-not-allowed disabled:shadow-none transition-all font-semibold rounded-xl text-sm text-white flex items-center justify-center gap-x-2">
                             <span>Draw Tile</span>
                         </button>
                         
                         <button onclick="endTurn()" 
                                 id="btn-end-turn"
-                                class="py-3.5 px-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:bg-amber-900/30 disabled:text-black/30 disabled:cursor-not-allowed disabled:shadow-none text-white font-bold transition-all rounded-2xl text-sm flex items-center justify-center gap-x-2 shadow">
+                                class="py-2 px-3 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:bg-amber-900/30 disabled:text-black/30 disabled:cursor-not-allowed disabled:shadow-none text-white font-semibold transition-all rounded-xl text-sm flex items-center justify-center gap-x-2 shadow">
                             <span>End Turn &amp; Pass</span>
                         </button>
                         
                         <button onclick="recallTurn()" 
                                 id="btn-recall"
-                                class="py-3 px-4 bg-red-600/10 hover:bg-red-600/20 active:bg-red-600/30 disabled:bg-black/5 disabled:text-black/30 disabled:cursor-not-allowed text-red-700 transition-all rounded-2xl text-sm font-semibold flex items-center justify-center gap-x-1.5">
+                                class="py-2 px-3 bg-red-600/10 hover:bg-red-600/20 active:bg-red-600/30 disabled:bg-black/5 disabled:text-black/30 disabled:cursor-not-allowed text-red-700 transition-all rounded-xl text-sm font-semibold flex items-center justify-center gap-x-1.5">
                             <span>↺ Recall Turn</span>
                         </button>
 
                         <button onclick="showHelp()" 
-                                class="py-3 px-4 bg-black/10 hover:bg-black/20 active:bg-black/30 transition-all rounded-2xl text-sm flex items-center justify-center">
+                                class="py-2 px-3 bg-black/10 hover:bg-black/20 active:bg-black/30 transition-all rounded-xl text-sm font-semibold flex items-center justify-center">
                             Rules
                         </button>
                     </div>
-                    
-                    <div id="turn-status" class="text-center text-[10px] text-amber-300/50 mt-2.5 min-h-[1rem]"></div>
                 </div>
             </div>
         </div>
@@ -739,7 +745,7 @@
             turnMeldIds: [],        // meld ids created this turn while initial meld was still pending
             consecutiveEmptyTurns: 0, // tracks a pool-exhausted stalemate (see endTurn/endGameStalemate)
             turnSnapshot: null,     // board/rack state at the start of the active player's turn (for Recall)
-            justDrawnTileId: null,  // highlighted green in the rack for the rest of the turn it was drawn
+            justDrawnTileIds: {},   // playerIndex -> tileId: highlighted green in that player's rack until their NEXT move
             newlyPlacedTileIds: [], // tiles placed/moved on the board this turn, glow for all players until it ends
             oneTileWarning: null,   // { seq, playerName } — broadcast to everyone when a rack drops to 1 tile
             turnTimerSeconds: 30,   // 0 = off; chosen at game start, persists for the match
@@ -964,6 +970,7 @@
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
             gameState.newlyPlacedTileIds = [];
+            gameState.justDrawnTileIds = {};
             gameState.pendingJokerRetrieval = null;
             gameState.consecutiveEmptyTurns = 0;
             gameState.selectedTileIds = new Set();
@@ -1111,7 +1118,17 @@
         }
 
         function getJustDrawnTileId() {
-            return netState.mode === 'client' ? (clientView ? clientView.justDrawnTileId : null) : gameState.justDrawnTileId;
+            if (netState.mode === 'client') return clientView ? clientView.justDrawnTileId : null;
+            // Whose highlight to show follows the same semantics as getMyPlayer: host = fixed
+            // index, solo pass & play = whoever currently holds the device.
+            const idx = netState.mode === 'host' ? netState.myIndex : gameState.currentPlayerIndex;
+            return (gameState.justDrawnTileIds || {})[idx] ?? null;
+        }
+
+        // The drawn-tile highlight lasts until that player's NEXT move — so every action
+        // function calls this for the acting player as its first state change.
+        function clearJustDrawnFor(playerIndex) {
+            if (gameState.justDrawnTileIds) delete gameState.justDrawnTileIds[playerIndex];
         }
 
         function getNewlyPlacedTileIds() {
@@ -1131,7 +1148,7 @@
                 initialPointsThisTurn: gameState.initialPointsThisTurn,
                 playedThisTurn: gameState.playedThisTurn,
                 hasDrawnThisTurn: gameState.hasDrawnThisTurn,
-                justDrawnTileId: gameState.justDrawnTileId,
+                justDrawnTileId: (gameState.justDrawnTileIds || {})[index] ?? null,
                 newlyPlacedTileIds: gameState.newlyPlacedTileIds,
                 hasPendingJokerRetrieval: !!(gameState.pendingJokerRetrieval && index === gameState.currentPlayerIndex),
                 oneTileWarning: gameState.oneTileWarning,
@@ -1538,6 +1555,8 @@
             // Replace joker in meld with the real tile
             meld.tiles = meld.tiles.map(t => t.id === jokerId ? replacement : t);
 
+            clearJustDrawnFor(gameState.currentPlayerIndex);
+
             // Glow the replacement tile for everyone until this player's turn ends
             gameState.newlyPlacedTileIds.push(replacement.id);
 
@@ -1608,7 +1627,7 @@
             if (tile.isJoker) {
                 el.innerHTML = `
                     <div class="text-center">
-                        <div class="text-4xl leading-none">😄</div>
+                        <div class="text-3xl leading-none">😄</div>
                     </div>
                 `;
             } else {
@@ -1948,6 +1967,7 @@
                 gameState.newlyPlacedTileIds.push(tile.id);
             }
 
+            clearJustDrawnFor(gameState.currentPlayerIndex);
             gameState.playedThisTurn = true;
             clearSelection();
             broadcastActionSound('place');
@@ -1995,10 +2015,10 @@
                     const tileEl = createTileElement(tile, true, canDragFromRack() ? { sourceType: 'rack' } : null);
 
                     if (isCrowded) {
-                        // Make tiles smaller and allow better wrapping when rack is full
-                        tileEl.style.width = '2.6rem';
-                        tileEl.style.height = '3.6rem';
-                        tileEl.style.fontSize = '1.3rem';
+                        // Make tiles even smaller when the rack is really full
+                        tileEl.style.width = '2.2rem';
+                        tileEl.style.height = '3rem';
+                        tileEl.style.fontSize = '1.1rem';
                     }
 
                     row.appendChild(tileEl);
@@ -2110,9 +2130,9 @@
                 sortedTiles.forEach(tile => {
                     const tileEl = createTileElement(tile, false, canDragFromTable() ? { sourceType: 'table', meldId: meld.id } : null); // not in rack
                     // Make slightly smaller on table
-                    tileEl.style.width = '2.65rem';
-                    tileEl.style.height = '3.65rem';
-                    tileEl.style.fontSize = '1.35rem';
+                    tileEl.style.width = '2.4rem';
+                    tileEl.style.height = '3.3rem';
+                    tileEl.style.fontSize = '1.2rem';
 
                     if (newlyPlacedIds.has(tile.id)) {
                         tileEl.classList.add('newly-placed');
@@ -2178,10 +2198,10 @@
             const statusEl = document.getElementById('initial-status');
             if (turnPlayerHasInitial) {
                 statusEl.textContent = 'Initial done';
-                statusEl.className = 'ml-2 text-[10px] px-2 py-0.5 bg-emerald-900/70 text-emerald-300 rounded-full align-middle';
+                statusEl.className = 'ml-2 text-xs px-2 py-0.5 bg-emerald-900/70 text-emerald-300 rounded-full align-middle';
             } else {
                 statusEl.textContent = `Initial: ${initialProgress}/30`;
-                statusEl.className = 'ml-2 text-[10px] px-2 py-0.5 bg-amber-900/70 text-amber-300 rounded-full align-middle';
+                statusEl.className = 'ml-2 text-xs px-2 py-0.5 bg-amber-900/70 text-amber-300 rounded-full align-middle';
             }
 
             document.getElementById('pool-count').textContent = poolCount;
@@ -2240,14 +2260,13 @@
                 const hasSomethingToRecall = hasPendingJoker || (playedThisTurn && !hasDrawn);
                 recallBtn.disabled = !myTurn || !hasSomethingToRecall;
             }
-
-            if (netState.mode !== 'solo') {
-                updateTurnStatus(myTurn ? '' : 'Waiting for other player\u2019s turn\u2026');
-            }
         }
 
         function updateTurnStatus(message = '') {
-            document.getElementById('turn-status').textContent = message;
+            // The visible status line was removed from the UI (it mostly showed redundant
+            // "waiting" text); calls remain throughout the code but now safely no-op.
+            const el = document.getElementById('turn-status');
+            if (el) el.textContent = message;
         }
 
         // ==================== SOUND EFFECTS ====================
@@ -2358,44 +2377,53 @@
             if (!getAudioContext()) return;
 
             switch (name) {
-                case 'tap': // tile select/deselect
-                    playTone(720, 0, 0.05, 'sine', 0.07);
+                case 'tap': // tile select/deselect — soft, clicky, unobtrusive
+                    playTone(820, 0, 0.04, 'sine', 0.06);
+                    playTone(1100, 0.008, 0.03, 'sine', 0.025);
                     break;
-                case 'place': // a meld was successfully played/added to/manipulated
-                    playTone(523.25, 0, 0.12, 'sine', 0.11);    // C5
-                    playTone(659.25, 0.05, 0.15, 'sine', 0.11); // E5
-                    playTone(783.99, 0.10, 0.20, 'sine', 0.13); // G5
+                case 'place': // a meld was successfully played/added to/manipulated — warm rising triad
+                    playTone(523.25, 0, 0.22, 'sine', 0.10);    // C5 sustained root under the arpeggio
+                    playTone(659.25, 0.06, 0.16, 'sine', 0.10); // E5
+                    playTone(783.99, 0.12, 0.24, 'sine', 0.12); // G5
+                    playTone(1046.50, 0.18, 0.16, 'sine', 0.05); // C6 sparkle on top
                     break;
-                case 'error': // invalid move / rejected action
-                    playTone(180, 0, 0.15, 'sawtooth', 0.09);
-                    playTone(140, 0.08, 0.18, 'sawtooth', 0.09);
+                case 'error': // invalid move / rejected action — low, muted double-thud
+                    playTone(196, 0, 0.13, 'sawtooth', 0.07);
+                    playTone(147, 0.09, 0.17, 'sawtooth', 0.08);
                     break;
-                case 'draw': // drew a tile from the pool
-                    playTone(400, 0, 0.08, 'triangle', 0.08);
-                    playTone(300, 0.05, 0.10, 'triangle', 0.06);
+                case 'draw': // drew a tile from the pool — soft wooden "plock"
+                    playTone(520, 0, 0.05, 'triangle', 0.10);
+                    playTone(340, 0.04, 0.09, 'triangle', 0.08);
+                    playTone(255, 0.09, 0.11, 'triangle', 0.05);
                     break;
-                case 'turn': // end turn / pass to next player
-                    playTone(523.25, 0, 0.10, 'sine', 0.09);
-                    playTone(392.00, 0.08, 0.12, 'sine', 0.08);
+                case 'turn': // end turn / pass to next player — gentle descending hand-off chime
+                    playTone(659.25, 0, 0.12, 'sine', 0.09);  // E5
+                    playTone(523.25, 0.10, 0.16, 'sine', 0.08); // C5
                     break;
-                case 'joker': // joker stolen from a table meld
-                    playTone(880, 0, 0.08, 'sine', 0.08);
-                    playTone(1108.73, 0.05, 0.08, 'sine', 0.08);
-                    playTone(1318.51, 0.10, 0.15, 'sine', 0.10);
+                case 'joker': // joker stolen from a table meld — quick magical sparkle run
+                    playTone(880, 0, 0.07, 'sine', 0.07);
+                    playTone(1108.73, 0.05, 0.07, 'sine', 0.08);
+                    playTone(1318.51, 0.10, 0.09, 'sine', 0.09);
+                    playTone(1760, 0.15, 0.16, 'sine', 0.08);
                     break;
-                case 'undo': // recall turn
-                    playTone(500, 0, 0.08, 'sine', 0.08);
-                    playTone(380, 0.06, 0.12, 'sine', 0.08);
+                case 'undo': // recall turn — soft downward "rewind"
+                    playTone(560, 0, 0.07, 'sine', 0.08);
+                    playTone(440, 0.06, 0.08, 'sine', 0.08);
+                    playTone(330, 0.12, 0.13, 'sine', 0.07);
                     break;
-                case 'win': // round or match won
-                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
-                        playTone(freq, i * 0.12, 0.25, 'sine', 0.14);
+                case 'win': // round or match won — ascending fanfare resolving into a held chord
+                    [523.25, 659.25, 783.99].forEach((freq, i) => {
+                        playTone(freq, i * 0.11, 0.22, 'sine', 0.13);
                     });
+                    // final resolving chord, all together, sustained
+                    playTone(1046.50, 0.33, 0.55, 'sine', 0.13); // C6
+                    playTone(783.99, 0.33, 0.55, 'sine', 0.09);  // G5
+                    playTone(659.25, 0.33, 0.55, 'sine', 0.07);  // E5
                     break;
                 case 'oneTile': // a player's rack just dropped to one tile — urgent heads-up for everyone
-                    playTone(987.77, 0, 0.11, 'square', 0.09);
-                    playTone(987.77, 0.16, 0.11, 'square', 0.09);
-                    playTone(1318.51, 0.32, 0.22, 'square', 0.11);
+                    playTone(987.77, 0, 0.11, 'square', 0.08);
+                    playTone(987.77, 0.16, 0.11, 'square', 0.08);
+                    playTone(1318.51, 0.32, 0.24, 'square', 0.10);
                     break;
                 case 'tick': {
                     // Countdown urgency tick — param is seconds remaining (10 down to 1).
@@ -2583,6 +2611,7 @@
             currentPlayer.rack = remainingRack;
 
             // Mark that we played this turn
+            clearJustDrawnFor(gameState.currentPlayerIndex);
             gameState.playedThisTurn = true;
 
             // If a previously-stolen joker was just replayed, the retrieval is now legitimate
@@ -2678,6 +2707,7 @@
 
             currentPlayer.rack = remainingRack;
 
+            clearJustDrawnFor(gameState.currentPlayerIndex);
             gameState.playedThisTurn = true;
 
             // If a previously-stolen joker was just replayed, the retrieval is now legitimate
@@ -2712,9 +2742,13 @@
             const drawnTile = gameState.pool.shift();
             currentPlayer.rack.push(drawnTile);
 
+            clearJustDrawnFor(gameState.currentPlayerIndex);
             gameState.playedThisTurn = true;
             gameState.hasDrawnThisTurn = true;
-            gameState.justDrawnTileId = drawnTile.id; // highlighted in the rack until this turn ends
+            // Highlighted in this player's rack until their NEXT move — deliberately survives
+            // the auto-pass so they can still see what they got when their turn comes back.
+            gameState.justDrawnTileIds = gameState.justDrawnTileIds || {};
+            gameState.justDrawnTileIds[gameState.currentPlayerIndex] = drawnTile.id;
 
             autoSortCurrentRack();
             clearSelection();
@@ -2780,7 +2814,7 @@
             gameState.playedThisTurn = false;
             gameState.hasDrawnThisTurn = false;
             gameState.turnMeldIds = [];
-            gameState.justDrawnTileId = null;
+            if (gameState.justDrawnTileIds) delete gameState.justDrawnTileIds[snap.playerIndex];
             gameState.newlyPlacedTileIds = [];
             gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
@@ -2900,7 +2934,6 @@
             gameState.initialPointsThisTurn = 0; // Reset initial meld progress for next player
             gameState.turnMeldIds = [];
             gameState.selectedTileIds.clear();
-            gameState.justDrawnTileId = null;
             gameState.newlyPlacedTileIds = [];
 
             captureTurnSnapshot();
@@ -3045,6 +3078,7 @@
             gameState.consecutiveEmptyTurns = 0;
             gameState.turnMeldIds = [];
             gameState.newlyPlacedTileIds = [];
+            gameState.justDrawnTileIds = {};
             gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
             gameState.gameStarted = true;
@@ -3125,7 +3159,7 @@
                         <div class="font-mono ${isWinner ? 'text-emerald-400' : 'text-red-400'} font-bold">
                             ${isWinner ? '+' : ''}${penalty}
                         </div>
-                        <div class="text-[10px] text-black/50">Total: ${cumulative}</div>
+                        <div class="text-xs text-black/50">Total: ${cumulative}</div>
                     </div>
                 </div>`;
             }).join('');
@@ -3209,7 +3243,7 @@
                     <span>${s.name} ${s.isWinner ? '(Winner)' : ''}</span>
                     <div class="text-right">
                         <div class="font-mono ${s.isWinner ? 'text-emerald-400' : 'text-red-400'} font-bold">${s.isWinner ? '+' : ''}${s.penalty}</div>
-                        <div class="text-[10px] text-black/50">Total: ${s.cumulative}</div>
+                        <div class="text-xs text-black/50">Total: ${s.cumulative}</div>
                     </div>
                 </div>
             `).join('');
@@ -3250,6 +3284,7 @@
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
             gameState.newlyPlacedTileIds = [];
+            gameState.justDrawnTileIds = {};
             gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
             clientSelectedTileIds.clear();
@@ -3307,6 +3342,7 @@
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
             gameState.newlyPlacedTileIds = [];
+            gameState.justDrawnTileIds = {};
             gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
 
