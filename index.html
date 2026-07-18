@@ -152,6 +152,17 @@
             50% { box-shadow: 0 0 14px 5px rgba(10, 132, 255, 0.85), 0 4px 10px -2px rgb(0 0 0 / 0.35); }
         }
 
+        /* Marks tiles in the rack that were pulled off the table this turn and still need to go
+           back before the turn can end — a distinct orange pulse, deliberately different from the
+           blue "just placed" glow, so it reads as "unfinished business" rather than "recently done." */
+        .tile.owed-to-board {
+            animation: owedToBoardGlow 1.3s ease-in-out infinite;
+        }
+        @keyframes owedToBoardGlow {
+            0%, 100% { box-shadow: 0 0 6px 2px rgba(255, 149, 0, 0.6), 0 4px 10px -2px rgb(0 0 0 / 0.35); }
+            50% { box-shadow: 0 0 15px 6px rgba(255, 149, 0, 0.9), 0 4px 10px -2px rgb(0 0 0 / 0.35); }
+        }
+
         #turn-timer-ring {
             transition: background 0.3s linear;
         }
@@ -746,6 +757,7 @@
             turnSnapshot: null,     // board/rack state at the start of the active player's turn (for Recall)
             justDrawnTileIds: {},   // playerIndex -> tileId: highlighted green in that player's rack until their NEXT move
             newlyPlacedTileIds: [], // tiles placed/moved on the board this turn, glow for all players until it ends
+            pulledFromTableIds: [], // tiles retracted from the table to this player's rack this turn, still owed back
             oneTileWarning: null,   // { seq, playerName } — broadcast to everyone when a rack drops to 1 tile
             turnTimerSeconds: 30,   // 0 = off; chosen at game start, persists for the match
             turnDeadline: null,     // Date.now() timestamp the current turn expires at, or null if timer is off
@@ -969,6 +981,7 @@
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
             gameState.newlyPlacedTileIds = [];
+            gameState.pulledFromTableIds = [];
             gameState.justDrawnTileIds = {};
             gameState.pendingJokerRetrieval = null;
             gameState.consecutiveEmptyTurns = 0;
@@ -1134,6 +1147,10 @@
             return netState.mode === 'client' ? (clientView ? clientView.newlyPlacedTileIds : []) : gameState.newlyPlacedTileIds;
         }
 
+        function getPulledFromTableIds() {
+            return netState.mode === 'client' ? (clientView ? clientView.pulledFromTableIds : []) : (gameState.pulledFromTableIds || []);
+        }
+
         function buildViewFor(index) {
             const me = gameState.players[index];
             return {
@@ -1149,6 +1166,7 @@
                 hasDrawnThisTurn: gameState.hasDrawnThisTurn,
                 justDrawnTileId: (gameState.justDrawnTileIds || {})[index] ?? null,
                 newlyPlacedTileIds: gameState.newlyPlacedTileIds,
+                pulledFromTableIds: index === gameState.currentPlayerIndex ? (gameState.pulledFromTableIds || []) : [],
                 hasPendingJokerRetrieval: !!(gameState.pendingJokerRetrieval && index === gameState.currentPlayerIndex),
                 oneTileWarning: gameState.oneTileWarning,
                 lastActionSound: gameState.lastActionSound,
@@ -1476,7 +1494,13 @@
             actingPlayerIndex = null;
             if (wasSolo) playSound('error'); // alert() doesn't auto-play a sound like showToast does
 
-            drawTile(); // draws one tile and (per the earlier fix) automatically ends the turn
+            if (gameState.pool.length > 0) {
+                drawTile(); // draws one tile and (per the earlier fix) automatically ends the turn
+            } else {
+                // Pool exhausted: drawTile() would silently no-op and strand the turn forever.
+                // endTurn() handles this correctly — counts it toward the stalemate ending.
+                endTurn();
+            }
         }
 
         // Calculate points for initial meld, giving jokers reasonable value
@@ -1913,9 +1937,18 @@
             // Nothing here blocks that; the whole board only needs to be valid again once the turn
             // actually ends (see the check in endTurn()). If it isn't, the turn can't be ended and
             // Recall Turn is always available to undo everything back to how it started.
-            let sourceReplacement; // 0 or 1 resulting tile-group (kept as-is, valid or not)
+            //
+            // One case is worth handling proactively rather than leaving it "temporarily broken":
+            // pulling a tile out of the MIDDLE of a run (e.g. removing 6 from 3-4-5-6-7-8-9) doesn't
+            // just shrink the meld, it splits it into two separate valid runs (3-4-5 and 7-8-9).
+            // Auto-detecting that immediately is far more helpful than leaving one big invalid blob
+            // for the player to manually untangle.
+            let sourceReplacement; // 0, 1, or 2 resulting tile-groups (kept as-is if no clean split)
             if (remaining.length === 0) {
                 sourceReplacement = [];
+            } else if (remaining.length >= 6 && !isValidMeld(remaining)) {
+                const split = trySplitMeld(remaining);
+                sourceReplacement = split || [remaining];
             } else {
                 sourceReplacement = [remaining];
             }
@@ -1928,6 +1961,8 @@
             } else if (target.type === 'rack') {
                 currentPlayer.rack.push(tile);
                 currentPlayer.rack = sortTiles(currentPlayer.rack);
+                gameState.pulledFromTableIds = gameState.pulledFromTableIds || [];
+                gameState.pulledFromTableIds.push(tile.id);
             } else if (target.type === 'newmeld') {
                 // Starts a new (possibly still-incomplete) meld — fine, it just needs to be a
                 // real meld by the time the turn ends.
@@ -2000,6 +2035,7 @@
             }
 
             const isCrowded = sortedRack.length > 16;
+            const owedBackIds = new Set(getPulledFromTableIds());
 
             // One row per color, in a fixed order, jokers on their own row at the end
             const colorOrder = ['red', 'blue', 'yellow', 'black', 'joker'];
@@ -2018,6 +2054,11 @@
                         tileEl.style.width = '2.2rem';
                         tileEl.style.height = '3rem';
                         tileEl.style.fontSize = '1.1rem';
+                    }
+
+                    if (owedBackIds.has(tile.id)) {
+                        tileEl.classList.add('owed-to-board');
+                        tileEl.title = 'This tile came off the table — move it back to finish your turn (or use Recall Turn)';
                     }
 
                     row.appendChild(tileEl);
@@ -2207,7 +2248,15 @@
         }
 
         function renderAll() {
-            if (netState.mode !== 'client') autoMergeMelds();
+            if (netState.mode !== 'client') {
+                autoMergeMelds();
+                // Once the board is valid again, whatever was pulled out has been legitimately
+                // resolved (whether it went back exactly, or got used differently) — no more
+                // "owed back" warning needed.
+                if (gameState.pulledFromTableIds && gameState.pulledFromTableIds.length && isBoardFullyValid()) {
+                    gameState.pulledFromTableIds = [];
+                }
+            }
 
             renderPlayerBanner();
             renderRack();
@@ -2613,6 +2662,12 @@
             clearJustDrawnFor(gameState.currentPlayerIndex);
             gameState.playedThisTurn = true;
 
+            // Any of these tiles that were owed back to the table are settled now
+            if (gameState.pulledFromTableIds && gameState.pulledFromTableIds.length) {
+                const playedIds = new Set(selectedTiles.map(t => t.id));
+                gameState.pulledFromTableIds = gameState.pulledFromTableIds.filter(id => !playedIds.has(id));
+            }
+
             // If a previously-stolen joker was just replayed, the retrieval is now legitimate
             clearPendingJokerIfPlayed(selectedTiles.map(t => t.id));
 
@@ -2708,6 +2763,12 @@
 
             clearJustDrawnFor(gameState.currentPlayerIndex);
             gameState.playedThisTurn = true;
+
+            // Any of these tiles that were owed back to the table are settled now
+            if (gameState.pulledFromTableIds && gameState.pulledFromTableIds.length) {
+                const playedIds = new Set(selectedTiles.map(t => t.id));
+                gameState.pulledFromTableIds = gameState.pulledFromTableIds.filter(id => !playedIds.has(id));
+            }
 
             // If a previously-stolen joker was just replayed, the retrieval is now legitimate
             clearPendingJokerIfPlayed(selectedTiles.map(t => t.id));
@@ -2815,6 +2876,7 @@
             gameState.turnMeldIds = [];
             if (gameState.justDrawnTileIds) delete gameState.justDrawnTileIds[snap.playerIndex];
             gameState.newlyPlacedTileIds = [];
+            gameState.pulledFromTableIds = [];
             gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
             clientSelectedTileIds.clear();
@@ -2934,6 +2996,7 @@
             gameState.turnMeldIds = [];
             gameState.selectedTileIds.clear();
             gameState.newlyPlacedTileIds = [];
+            gameState.pulledFromTableIds = [];
 
             captureTurnSnapshot();
             playSound('turn');
@@ -3077,6 +3140,7 @@
             gameState.consecutiveEmptyTurns = 0;
             gameState.turnMeldIds = [];
             gameState.newlyPlacedTileIds = [];
+            gameState.pulledFromTableIds = [];
             gameState.justDrawnTileIds = {};
             gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
@@ -3275,7 +3339,10 @@
             }));
 
             gameState.players = players;
-            gameState.currentPlayerIndex = 0;
+            gameState.roundNumber = (gameState.roundNumber || 1) + 1;
+            // Rotate who starts: round 1 -> player 0, round 2 -> player 1, and so on around
+            // the table, so the same person doesn't get the first-move advantage every round.
+            gameState.currentPlayerIndex = (gameState.roundNumber - 1) % players.length;
             gameState.tableMelds = [];
             gameState.playedThisTurn = false;
             gameState.hasDrawnThisTurn = false;
@@ -3283,11 +3350,11 @@
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
             gameState.newlyPlacedTileIds = [];
+            gameState.pulledFromTableIds = [];
             gameState.justDrawnTileIds = {};
             gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
             clientSelectedTileIds.clear();
-            gameState.roundNumber = (gameState.roundNumber || 1) + 1;
             gameState.gameStarted = true;
 
             const tiles = generateAllTiles(gameState.tileVariant);
@@ -3300,7 +3367,7 @@
             renderAll();
             captureTurnSnapshot();
             startTurnTimer();
-            updateTurnStatus(`Round ${gameState.roundNumber} started. First player begins.`);
+            updateTurnStatus(`Round ${gameState.roundNumber} started. ${players[gameState.currentPlayerIndex].name} begins.`);
             saveGameToLocalStorage();
         }
 
@@ -3341,6 +3408,7 @@
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
             gameState.newlyPlacedTileIds = [];
+            gameState.pulledFromTableIds = [];
             gameState.justDrawnTileIds = {};
             gameState.pendingJokerRetrieval = null;
             gameState.selectedTileIds = new Set();
@@ -3383,6 +3451,7 @@
                     roundNumber: gameState.roundNumber,
                     turnSnapshot: gameState.turnSnapshot,
                     turnTimerSeconds: gameState.turnTimerSeconds,
+                    tileVariant: gameState.tileVariant,
                     gameStarted: true
                 };
                 localStorage.setItem('rummikubGameState', JSON.stringify(serializable));
@@ -3417,6 +3486,12 @@
                 gameState.turnSnapshot = parsed.turnSnapshot || null;
                 if (!gameState.turnSnapshot) captureTurnSnapshot(); // older save from before Recall existed
                 gameState.turnTimerSeconds = parsed.turnTimerSeconds !== undefined ? parsed.turnTimerSeconds : 30;
+                gameState.tileVariant = parsed.tileVariant || 'standard';
+                gameState.justDrawnTileIds = {};
+                gameState.newlyPlacedTileIds = [];
+                gameState.pulledFromTableIds = [];
+                gameState.pendingJokerRetrieval = null;
+                gameState.consecutiveEmptyTurns = 0;
                 startTurnTimer(); // give a fresh full countdown rather than guessing elapsed time
 
                 // Show game screen
