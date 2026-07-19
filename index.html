@@ -163,6 +163,27 @@
             50% { box-shadow: 0 0 15px 6px rgba(255, 149, 0, 0.9), 0 4px 10px -2px rgb(0 0 0 / 0.35); }
         }
 
+        /* Inverted "it's YOUR turn" name pill: gentle breathing glow so it catches the eye
+           without being distracting. */
+        .turn-name-pulse {
+            animation: turnNamePulse 2s ease-in-out infinite;
+        }
+        @keyframes turnNamePulse {
+            0%, 100% { box-shadow: 0 0 4px 1px rgba(10, 132, 255, 0.45); }
+            50% { box-shadow: 0 0 14px 4px rgba(10, 132, 255, 0.8); }
+        }
+
+        /* End Turn button once it's actually pressable: brighter and pulsing, so finishing
+           the turn is impossible to miss. */
+        #btn-end-turn.end-turn-ready {
+            background-color: #FF9F0A !important;
+            animation: endTurnReadyPulse 1.4s ease-in-out infinite;
+        }
+        @keyframes endTurnReadyPulse {
+            0%, 100% { box-shadow: 0 0 5px 1px rgba(255, 159, 10, 0.5); transform: scale(1); }
+            50% { box-shadow: 0 0 16px 5px rgba(255, 159, 10, 0.85); transform: scale(1.025); }
+        }
+
         #turn-timer-ring {
             transition: background 0.3s linear;
         }
@@ -669,17 +690,23 @@
             <div id="scores-list" class="text-left bg-black/[0.04] rounded-2xl p-4 mb-6 text-sm space-y-1.5"></div>
             
             <div class="flex gap-3">
+                <button onclick="viewBoardFromWin()" 
+                        class="flex-1 py-3.5 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-semibold transition rounded-2xl">
+                    View Board
+                </button>
                 <button onclick="newGameFromWin()" 
                         class="flex-1 py-3.5 bg-black/10 hover:bg-black/20 active:bg-black/30 transition rounded-2xl font-semibold">
                     New Game
                 </button>
-                <button onclick="closeWinModal()" 
-                        class="flex-1 py-3.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold rounded-2xl transition">
-                    Close
-                </button>
             </div>
         </div>
     </div>
+
+    <!-- Floating pill to return to the win results after "View Board" -->
+    <button id="win-results-pill" onclick="reopenWinModal()"
+            class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-[59] px-5 py-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 text-white font-bold text-sm rounded-full shadow-2xl items-center gap-x-2">
+        🏆 Show Results
+    </button>
 
     <!-- GAME MENU -->
     <div id="game-menu" onclick="if (event.target.id === 'game-menu') hideGameMenu()" class="hidden fixed inset-0 bg-black/70 z-[70] flex items-end sm:items-center justify-center p-4">
@@ -1071,6 +1098,7 @@
                 }
             } else if (msg.t === 'state') {
                 const firstTime = !clientView || !clientView.gameStarted;
+                const prevRound = clientView ? clientView.roundNumber : null;
                 clientView = msg.view;
                 clientSelectedTileIds.clear();
 
@@ -1080,6 +1108,11 @@
                     // Establish a baseline so joining mid-game doesn't immediately play a sound
                     // for something that already happened before this device connected.
                     netState.lastPlayedActionSoundSeq = clientView.lastActionSound ? clientView.lastActionSound.seq : 0;
+                }
+
+                // Host started a new round: clear any lingering win results / pill from the last one
+                if (prevRound !== null && clientView.roundNumber !== prevRound) {
+                    closeWinModal();
                 }
 
                 renderAll();
@@ -1172,6 +1205,7 @@
                 lastActionSound: gameState.lastActionSound,
                 turnDeadline: gameState.turnDeadline,
                 turnTimerSeconds: gameState.turnTimerSeconds,
+                roundNumber: gameState.roundNumber,
                 winner: gameState.lastWinnerPayload || null
             };
         }
@@ -1480,16 +1514,28 @@
 
             gameState.turnDeadline = null; // stop re-firing while we handle this one
 
-            // Time's up: always reset the board/rack back to how the turn started, draw one
-            // tile, and pass — regardless of what was or wasn't done this turn.
+            const wasSolo = netState.mode === 'solo';
+
+            // Case 1: they made a valid play but never tapped End Turn — keep the play, just pass.
+            if (gameState.playedThisTurn && isBoardFullyValid()) {
+                const msg = "⏱️ Time's up! Your play was kept and the turn passed automatically.";
+                actingPlayerIndex = gameState.currentPlayerIndex;
+                reportActionError(msg);
+                actingPlayerIndex = null;
+                if (wasSolo) playSound('error');
+                endTurn();
+                return;
+            }
+
+            // Case 2: nothing (valid) done — reset any half-finished manipulation back to how
+            // the turn started, draw one tile, and pass to the next player.
             const snap = gameState.turnSnapshot;
             if (snap && snap.playerIndex === gameState.currentPlayerIndex) {
                 restoreFromSnapshot(snap);
             }
 
-            const msg = "⏱️ Time's up! Your turn was reset and a tile was drawn for you.";
+            const msg = "⏱️ Time's up! A tile was drawn for you and the turn passed.";
             actingPlayerIndex = gameState.currentPlayerIndex; // route to whoever's turn actually timed out
-            const wasSolo = netState.mode === 'solo';
             reportActionError(msg);
             actingPlayerIndex = null;
             if (wasSolo) playSound('error'); // alert() doesn't auto-play a sound like showToast does
@@ -2004,6 +2050,14 @@
             clearJustDrawnFor(gameState.currentPlayerIndex);
             gameState.playedThisTurn = true;
             clearSelection();
+
+            // If the rack was already emptied earlier this turn and this rearrangement just
+            // made the whole table legal, that's the win — no extra End Turn tap needed.
+            if (currentPlayer.rack.length === 0 && isBoardFullyValid() && currentPlayer.hasInitial && !gameState.pendingJokerRetrieval) {
+                endGame(currentPlayer);
+                return;
+            }
+
             broadcastActionSound('place');
             renderAll();
             playSound('place');
@@ -2229,7 +2283,7 @@
             // makes it immediately obvious at a glance whether you're waiting or up to play.
             const myTurnNow = isMyTurn();
             document.getElementById('current-player-name').className = myTurnNow
-                ? 'font-bold text-lg leading-tight truncate text-[#0A84FF]'
+                ? 'font-bold text-lg leading-tight truncate text-white bg-[#0A84FF] px-3 py-0.5 rounded-xl shadow-md turn-name-pulse'
                 : 'font-semibold text-lg leading-tight truncate text-black/40';
             document.getElementById('current-player-dot').className = myTurnNow
                 ? 'w-3.5 h-3.5 rounded-full bg-[#0A84FF] ring-2 ring-[#0A84FF]/30 flex-shrink-0'
@@ -2296,7 +2350,11 @@
             // End Turn button
             const endTurnBtn = document.getElementById('btn-end-turn');
             if (endTurnBtn) {
-                endTurnBtn.disabled = !myTurn || !(playedThisTurn || hasPendingJoker);
+                const canEnd = myTurn && (playedThisTurn || hasPendingJoker);
+                endTurnBtn.disabled = !canEnd;
+                // Bright pulsing highlight when it's actually pressable — makes "your move is
+                // done, pass it on" impossible to miss.
+                endTurnBtn.classList.toggle('end-turn-ready', canEnd);
             }
 
             // Recall Turn button — enabled once a meld/manipulation has actually been played this
@@ -2674,10 +2732,16 @@
             // Clear selection
             clearSelection();
 
-            // Check for win
+            // Check for win — an empty rack only wins if the table is left entirely legal:
+            // every meld valid, the 30-point initial requirement met, and no stolen joker
+            // still owing a replay. Otherwise play continues until the board is fixed
+            // (or Recall Turn undoes it all).
             if (currentPlayer.rack.length === 0) {
-                endGame(currentPlayer);
-                return;
+                if (isBoardFullyValid() && currentPlayer.hasInitial && !gameState.pendingJokerRetrieval) {
+                    endGame(currentPlayer);
+                    return;
+                }
+                reportActionError("Last tile played, but the table still has invalid melds — fix them to win, or Recall Turn.");
             }
             checkOneTileWarning(currentPlayer);
 
@@ -2775,9 +2839,13 @@
 
             clearSelection();
 
+            // Empty rack only wins with an entirely legal table (see laySelectedAsMeld)
             if (currentPlayer.rack.length === 0) {
-                endGame(currentPlayer);
-                return;
+                if (isBoardFullyValid() && currentPlayer.hasInitial && !gameState.pendingJokerRetrieval) {
+                    endGame(currentPlayer);
+                    return;
+                }
+                reportActionError("Last tile played, but the table still has invalid melds — fix them to win, or Recall Turn.");
             }
             checkOneTileWarning(currentPlayer);
 
@@ -3326,6 +3394,34 @@
         function closeWinModal() {
             document.getElementById('win-modal').classList.remove('flex');
             document.getElementById('win-modal').classList.add('hidden');
+            hideWinResultsPill();
+        }
+
+        // "View Board": tuck the results away so everyone can study the final table (what the
+        // winning play was, where the melds ended up), with a floating pill to bring the
+        // results back at any time. The board underneath is the final broadcast state.
+        function viewBoardFromWin() {
+            const modal = document.getElementById('win-modal');
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+            const pill = document.getElementById('win-results-pill');
+            pill.classList.remove('hidden');
+            pill.classList.add('flex');
+        }
+
+        function reopenWinModal() {
+            hideWinResultsPill();
+            const modal = document.getElementById('win-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function hideWinResultsPill() {
+            const pill = document.getElementById('win-results-pill');
+            if (pill) {
+                pill.classList.add('hidden');
+                pill.classList.remove('flex');
+            }
         }
 
         function startNextRound() {
@@ -3390,6 +3486,7 @@
         function resetCurrentGame() {
             hideGameMenu();
             if (!confirm('Restart the current game with same players?')) return;
+            closeWinModal();
 
             // Re-deal with same players
             const players = gameState.players.map(p => ({
