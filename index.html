@@ -803,7 +803,16 @@
             myIndex: 0,
             peer: null,
             conns: [],        // host only: DataConnection per player index (index 0 = host = null)
-            roomCode: ''
+            roomCode: '',
+            myName: '',
+            // --- reconnect / resilience state (client) ---
+            reconnecting: false,     // guard: a (re)connection attempt is currently in flight
+            reconnectAttempts: 0,    // consecutive failures, drives the backoff delay
+            nextRetryAt: 0,          // Date.now() timestamp before which the watchdog won't retry
+            lastNetActivityAt: 0,    // last time ANY message (incl. pings) arrived from the host
+            watchdogTimer: null,     // the persistent setInterval driving retries + heartbeats
+            pendingActions: [],      // actions attempted while disconnected, flushed on reconnect
+            hasEverJoined: false     // only auto-reconnect once we actually had a seat
         };
         let clientView = null;           // client only: latest state pushed from host
         let clientSelectedTileIds = new Set(); // client only: local tile selection before sending an action
@@ -877,14 +886,44 @@
             });
 
             peer.on('connection', conn => {
-                conn.on('open', () => { /* wait for join message */ });
-                conn.on('data', msg => handleHostMessage(conn, msg));
+                conn._lastActivityAt = Date.now();
+                conn.on('open', () => { conn._lastActivityAt = Date.now(); });
+                conn.on('data', msg => {
+                    conn._lastActivityAt = Date.now();
+                    handleHostMessage(conn, msg);
+                });
                 conn.on('close', () => handlePeerDisconnect(conn));
                 conn.on('error', () => handlePeerDisconnect(conn));
             });
 
+            // Broker (signaling server) hiccup: resume the same peer rather than losing the
+            // room code everyone already has.
+            peer.on('disconnected', () => {
+                try { if (!peer.destroyed) peer.reconnect(); } catch (e) { /* clients will retry us */ }
+            });
+
             peer.on('error', err => {
                 showToast('Connection error: ' + (err && err.type ? err.type : err), 'error');
+            });
+
+            startNetWatchdog();
+        }
+
+        // Host heartbeat: ping every connected client every ~6s; if nothing (pong or anything
+        // else) has arrived from them in 20s, the connection is "silently dead" — close it out
+        // so their seat is properly marked disconnected and can be reclaimed by a rejoin.
+        function hostHeartbeatSweep() {
+            const now = Date.now();
+            (netState.conns || []).forEach((conn, i) => {
+                if (!conn || i === netState.myIndex || !conn.open) return;
+                if (!conn._lastPingAt || now - conn._lastPingAt > 6000) {
+                    conn._lastPingAt = now;
+                    try { conn.send({ t: 'ping' }); } catch (e) { /* sweep below handles it */ }
+                }
+                if (conn._lastActivityAt && now - conn._lastActivityAt > 20000) {
+                    try { conn.close(); } catch (e) { /* best effort */ }
+                    handlePeerDisconnect(conn);
+                }
             });
         }
 
@@ -910,9 +949,37 @@
         function handleHostMessage(conn, msg) {
             if (!msg || !msg.t) return;
 
+            if (msg.t === 'pong') return; // heartbeat answer; activity timestamp already updated
+
             if (msg.t === 'join') {
                 if (gameState.gameStarted) {
+                    // Mid-game REJOIN: a disconnected player reclaiming their seat. Verified by
+                    // matching both the seat index and the exact name they joined with.
+                    const ri = msg.rejoinIndex;
+                    const nm = (msg.name || '').trim();
+                    if (ri !== undefined && ri !== null && gameState.players[ri] &&
+                        gameState.players[ri].name === nm) {
+                        netState.conns[ri] = conn;
+                        conn._playerIndex = ri;
+                        conn._lastActivityAt = Date.now();
+                        conn.send({ t: 'joined', index: ri });
+                        conn.send({ t: 'state', view: buildViewFor(ri) });
+                        showToast(`${nm} reconnected.`, 'success');
+                        return;
+                    }
                     conn.send({ t: 'error', message: 'Game already in progress.' });
+                    return;
+                }
+                // Lobby rejoin: reclaim the same seat rather than duplicating the player
+                const lri = msg.rejoinIndex;
+                if (lri !== undefined && lri !== null && gameState.players[lri] &&
+                    gameState.players[lri].name === (msg.name || '').trim()) {
+                    netState.conns[lri] = conn;
+                    conn._playerIndex = lri;
+                    conn._lastActivityAt = Date.now();
+                    conn.send({ t: 'joined', index: lri });
+                    renderHostLobby();
+                    broadcastLobby();
                     return;
                 }
                 if (gameState.players.length >= getMaxPlayers()) {
@@ -1052,38 +1119,154 @@
 
             netState.mode = 'client';
             netState.myName = name;
+            netState.roomCode = code;
+            netState.reconnectAttempts = 0;
+            netState.nextRetryAt = 0;
 
-            const peer = new Peer();
-            netState.peer = peer;
+            connectToHost();
+            startNetWatchdog();
+        }
 
-            peer.on('open', () => {
-                const conn = peer.connect('rk-' + code.toLowerCase(), { reliable: true });
-                netState.conns = [conn];
+        // Builds (or rebuilds) the client's connection to the host. Safe to call repeatedly:
+        // the `reconnecting` guard prevents overlapping attempts, and any previous peer is
+        // torn down first. Used both for the initial join and every automatic reconnect.
+        function connectToHost() {
+            if (netState.reconnecting) return;
+            netState.reconnecting = true;
 
-                conn.on('open', () => {
-                    conn.send({ t: 'join', name });
-                });
-                conn.on('data', msg => handleClientMessage(msg));
-                conn.on('close', () => showToast('Disconnected from host.', 'error'));
-                conn.on('error', () => showToast('Could not connect to host.', 'error'));
-            });
-
-            peer.on('error', err => {
-                if (err && err.type === 'peer-unavailable') {
-                    showToast('Room not found. Check the code and WiFi network.', 'error');
-                } else {
-                    showToast('Connection error: ' + (err && err.type ? err.type : err), 'error');
+            try {
+                if (netState.peer && !netState.peer.destroyed) {
+                    try { netState.peer.destroy(); } catch (e) { /* already gone */ }
                 }
-            });
+
+                const peer = new Peer();
+                netState.peer = peer;
+
+                peer.on('open', () => {
+                    const conn = peer.connect('rk-' + netState.roomCode.toLowerCase(), { reliable: true });
+                    netState.conns = [conn];
+
+                    conn.on('open', () => {
+                        // Healthy again: clear the guard and reset the backoff ladder
+                        netState.reconnecting = false;
+                        netState.reconnectAttempts = 0;
+                        netState.lastNetActivityAt = Date.now();
+
+                        const payload = { t: 'join', name: netState.myName };
+                        // If we already had a seat in a running game, ask for it back
+                        if (netState.hasEverJoined) payload.rejoinIndex = netState.myIndex;
+                        conn.send(payload);
+
+                        flushPendingActions();
+                    });
+                    conn.on('data', msg => {
+                        netState.lastNetActivityAt = Date.now(); // any traffic counts as alive
+                        handleClientMessage(msg);
+                    });
+                    conn.on('close', () => {
+                        showToast('Disconnected from host — reconnecting…', 'warning');
+                        scheduleReconnect();
+                    });
+                    conn.on('error', () => scheduleReconnect());
+                });
+
+                // Broker (signaling server) hiccup: PeerJS can resume the SAME peer without a
+                // full rebuild — much lighter than tearing everything down. Falls back to the
+                // full rebuild path via the watchdog if that fails too.
+                peer.on('disconnected', () => {
+                    try { if (!peer.destroyed) peer.reconnect(); } catch (e) { scheduleReconnect(); }
+                });
+
+                peer.on('error', err => {
+                    netState.reconnecting = false;
+                    if (err && err.type === 'peer-unavailable') {
+                        showToast(netState.hasEverJoined
+                            ? 'Host unreachable — retrying…'
+                            : 'Room not found. Check the code and WiFi network.', 'error');
+                    } else {
+                        showToast('Connection error: ' + (err && err.type ? err.type : err), 'error');
+                    }
+                    scheduleReconnect();
+                });
+            } catch (e) {
+                netState.reconnecting = false;
+                scheduleReconnect();
+            }
+        }
+
+        // Marks the connection as needing a retry, with increasing backoff (2s → 12s cap) so
+        // a dead network isn't hammered. The persistent watchdog performs the actual retry.
+        function scheduleReconnect() {
+            netState.reconnecting = false;
+            if (netState.mode !== 'client') return;
+            if (!netState.hasEverJoined) return; // never had a seat — let the user retap Join
+            netState.reconnectAttempts = Math.min((netState.reconnectAttempts || 0) + 1, 6);
+            netState.nextRetryAt = Date.now() + Math.min(2000 * netState.reconnectAttempts, 12000);
+        }
+
+        function clientConnOpen() {
+            const conn = netState.conns && netState.conns[0];
+            return !!(conn && conn.open);
+        }
+
+        // Actions attempted while disconnected are queued and resent automatically the moment
+        // the connection comes back, instead of silently vanishing. The host validates
+        // everything anyway (turn ownership, legality), so a stale queued action is harmless.
+        function flushPendingActions() {
+            const conn = netState.conns && netState.conns[0];
+            if (!conn || !conn.open) return;
+            const queued = netState.pendingActions || [];
+            netState.pendingActions = [];
+            queued.forEach(m => { try { conn.send(m); } catch (e) { /* dropped, host state wins */ } });
+            if (queued.length) showToast('Reconnected — your queued move was sent.', 'success');
+        }
+
+        // One persistent loop drives everything network-health related. Client: background
+        // auto-retry with backoff + silently-dead-connection detection. Host: heartbeat pings
+        // and dead-client sweeps. Runs every 2s regardless of user interaction, so recovery
+        // no longer depends on someone tapping the screen.
+        function startNetWatchdog() {
+            if (netState.watchdogTimer) return;
+            netState.watchdogTimer = setInterval(() => {
+                if (netState.mode === 'client') {
+                    // "Silently dead" detection: still technically open, but nothing has arrived
+                    // (not even heartbeat pings) for 20s — force a rebuild rather than hang.
+                    if (clientConnOpen() && netState.lastNetActivityAt &&
+                        Date.now() - netState.lastNetActivityAt > 20000) {
+                        try { netState.conns[0].close(); } catch (e) { /* best effort */ }
+                        scheduleReconnect();
+                        netState.nextRetryAt = 0; // no need to wait, we KNOW it's dead
+                    }
+                    // Background auto-retry once the backoff window has passed
+                    if (!clientConnOpen() && !netState.reconnecting && netState.hasEverJoined &&
+                        Date.now() >= (netState.nextRetryAt || 0)) {
+                        connectToHost();
+                    }
+                } else if (netState.mode === 'host') {
+                    hostHeartbeatSweep();
+                }
+            }, 2000);
         }
 
         function handleClientMessage(msg) {
             if (!msg || !msg.t) return;
 
+            if (msg.t === 'ping') {
+                // Heartbeat from the host — answer so they know we're alive too
+                const conn = netState.conns && netState.conns[0];
+                if (conn && conn.open) { try { conn.send({ t: 'pong' }); } catch (e) {} }
+                return;
+            }
+
             if (msg.t === 'joined') {
                 netState.myIndex = msg.index;
-                document.getElementById('join-form').classList.add('hidden');
-                document.getElementById('join-waiting-body').classList.remove('hidden');
+                netState.hasEverJoined = true;
+                // On a mid-game rejoin the game screen is already (or about to be) showing —
+                // don't yank the player back to the lobby waiting UI.
+                if (!(clientView && clientView.gameStarted)) {
+                    document.getElementById('join-form').classList.add('hidden');
+                    document.getElementById('join-waiting-body').classList.remove('hidden');
+                }
             } else if (msg.t === 'error') {
                 showToast(msg.message || 'Could not join room.', 'error');
             } else if (msg.t === 'lobby') {
@@ -1140,8 +1323,20 @@
         }
 
         function sendAction(payload) {
+            const msg = Object.assign({ t: 'action' }, payload);
             const conn = netState.conns && netState.conns[0];
-            if (conn && conn.open) conn.send(Object.assign({ t: 'action' }, payload));
+            if (conn && conn.open) {
+                conn.send(msg);
+                return;
+            }
+            // Disconnected: queue it (small cap — old moves are usually stale anyway) and let
+            // the reconnect flush send it. The host validates everything, so no harm done if
+            // the game moved on in the meantime.
+            netState.pendingActions = netState.pendingActions || [];
+            netState.pendingActions.push(msg);
+            if (netState.pendingActions.length > 10) netState.pendingActions.shift();
+            netState.nextRetryAt = 0; // user is actively trying to play — retry immediately
+            showToast('Connection lost — your move will be sent once reconnected…', 'warning');
         }
 
         // ---------- SHARED HELPERS ----------
@@ -3808,6 +4003,21 @@ Have fun on the Weskus!`;
                 // Show the mode-select screen (Host / Join / Pass & Play) by default
                 document.getElementById('mode-screen').classList.remove('hidden');
             }
+
+            // Extra reconnect triggers on top of the watchdog's own background polling — these
+            // fire an immediate attempt instead of waiting out the current backoff delay.
+            window.addEventListener('online', () => {
+                if (netState.mode === 'client' && !clientConnOpen()) {
+                    netState.nextRetryAt = 0;
+                    connectToHost();
+                }
+            });
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible' && netState.mode === 'client' && !clientConnOpen()) {
+                    netState.nextRetryAt = 0;
+                    connectToHost();
+                }
+            });
 
             // Keyboard support (nice for testing)
             document.addEventListener('keydown', (e) => {
