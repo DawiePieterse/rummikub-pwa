@@ -325,32 +325,46 @@
                     <span class="title-font text-5xl font-black text-white">R</span>
                 </div>
                 <h1 class="title-font text-6xl font-bold tracking-tighter">Rummikub</h1>
-                <p class="text-amber-300/80 mt-1 text-lg">2–6 Players • iPad &amp; iPhone</p>
+                <p class="text-black/50 mt-1 text-lg">Multiplayer on the same WiFi — no server needed</p>
             </div>
 
-            <div class="bg-white rounded-3xl p-8 shadow-2xl border border-black/10 space-y-3">
-                <h2 class="section-title text-amber-300 mb-2">Play Over WiFi</h2>
+            <div class="bg-white rounded-3xl p-6 shadow-2xl border border-black/10">
+                <input type="text" id="mode-name-input" placeholder="Your name"
+                       class="w-full bg-black/5 border border-black/15 focus:border-[#0A84FF]/60 transition px-4 py-3.5 rounded-2xl text-base text-center font-medium mb-3">
+
                 <button onclick="showHostSetup()"
-                        class="w-full py-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all text-white font-bold text-lg rounded-2xl shadow-lg flex items-center justify-center gap-x-2">
+                        class="w-full py-4 bg-[#0A84FF] hover:bg-[#0A74E0] active:bg-[#0968C8] transition-all text-white font-bold text-lg rounded-2xl shadow-lg flex items-center justify-center gap-x-2">
+                    <span>🏠</span>
                     <span>Host Game</span>
                 </button>
-                <button onclick="showJoinSetup()"
-                        class="w-full py-4 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 transition-all text-white font-bold text-lg rounded-2xl shadow-lg flex items-center justify-center gap-x-2">
+
+                <div class="flex items-center gap-x-3 my-4">
+                    <div class="flex-1 h-px bg-black/10"></div>
+                    <span class="text-xs font-semibold text-black/40">OR</span>
+                    <div class="flex-1 h-px bg-black/10"></div>
+                </div>
+
+                <input type="text" id="mode-room-code-input" placeholder="ROOM CODE" autocapitalize="characters" maxlength="4"
+                       class="w-full bg-black/5 border border-black/15 focus:border-[#0A84FF]/60 transition px-4 py-3.5 rounded-2xl text-base text-center font-bold uppercase tracking-[0.2em] mb-3">
+
+                <button onclick="joinGameFromModeScreen()"
+                        class="w-full py-4 bg-zinc-900 hover:bg-zinc-800 active:bg-black transition-all text-white font-bold text-lg rounded-2xl shadow-lg flex items-center justify-center gap-x-2">
+                    <span>➜]</span>
                     <span>Join Game</span>
                 </button>
-
-                <div class="h-px bg-black/10 my-4"></div>
-
-                <h2 class="section-title text-amber-300 mb-2">Or</h2>
-                <button onclick="showSoloSetup()"
-                        class="w-full py-3.5 bg-black/10 hover:bg-black/20 active:bg-black/30 transition-all font-semibold rounded-2xl text-sm flex items-center justify-center gap-x-2">
-                    <span>Pass &amp; Play (One Device)</span>
-                </button>
-                <p class="text-center text-xs text-amber-300/50 mt-1">Each iPad gets its own rack. One person hosts, everyone else joins with the room code — all on the same WiFi network.</p>
             </div>
 
-            <div class="text-center mt-6 text-xs text-amber-300/40">
-                v1.0 • Multiplayer over WiFi
+            <button onclick="testSound()"
+                    class="w-full mt-4 py-3.5 bg-white hover:bg-black/5 active:bg-black/10 transition-all rounded-2xl text-sm font-semibold border border-black/10 flex items-center justify-center gap-x-2">
+                <span>🔊</span>
+                <span>Test Sound</span>
+            </button>
+
+            <p class="text-center mt-6 text-xs text-black/40 leading-relaxed px-4">
+                First connection needs internet briefly (to find each other). Gameplay then runs over your WiFi.
+            </p>
+            <div class="text-center mt-2 text-xs text-black/25">
+                Rummikub LAN
             </div>
         </div>
     </div>
@@ -689,16 +703,27 @@
             
             <div id="scores-list" class="text-left bg-black/[0.04] rounded-2xl p-4 mb-6 text-sm space-y-1.5"></div>
             
-            <div class="flex gap-3">
-                <button onclick="viewBoardFromWin()" 
-                        class="flex-1 py-3.5 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-semibold transition rounded-2xl">
-                    View Board
+            <button onclick="viewBoardFromWin()" 
+                    class="w-full py-3.5 mb-3 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-semibold transition rounded-2xl">
+                View Board
+            </button>
+
+            <!-- Only the host (or solo) can decide what happens next - continuing the match or
+                 ending it entirely affects everyone, so it's not a decision any one client should
+                 be able to make unilaterally. -->
+            <div id="win-host-controls" class="flex gap-3">
+                <button onclick="startNextRound()" id="win-next-round-btn"
+                        class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-2xl transition">
+                    Next Round →
                 </button>
-                <button onclick="newGameFromWin()" 
-                        class="flex-1 py-3.5 bg-black/10 hover:bg-black/20 active:bg-black/30 transition rounded-2xl font-semibold">
-                    New Game
+                <button onclick="endMatchFromWin()"
+                        class="flex-1 py-3.5 bg-red-600/10 hover:bg-red-600/20 active:bg-red-600/30 text-red-700 font-semibold rounded-2xl transition">
+                    End Match
                 </button>
             </div>
+            <p id="win-waiting-message" class="hidden text-sm text-black/50 py-2">
+                Waiting for the host to start the next round or end the match…
+            </p>
         </div>
     </div>
 
@@ -832,13 +857,28 @@
         }
 
         function showHostSetup() {
+            const sharedName = (document.getElementById('mode-name-input').value || '').trim();
             document.getElementById('mode-screen').classList.add('hidden');
             document.getElementById('host-lobby-screen').classList.remove('hidden');
+            if (sharedName) document.getElementById('host-name-input').value = sharedName;
         }
 
-        function showJoinSetup() {
+        function joinGameFromModeScreen() {
+            const name = (document.getElementById('mode-name-input').value || 'Player').trim() || 'Player';
+            const code = (document.getElementById('mode-room-code-input').value || '').trim().toUpperCase();
+
+            if (code.length !== 4) {
+                showToast('Enter the 4-character room code.', 'error');
+                return;
+            }
+
+            // Reuses the existing join screen/flow as-is — just pre-filled and triggered
+            // directly, so the player only ever has to type their name and the code once.
+            document.getElementById('join-name-input').value = name;
+            document.getElementById('join-code-input').value = code;
             document.getElementById('mode-screen').classList.add('hidden');
             document.getElementById('join-screen').classList.remove('hidden');
+            joinConnectToRoom();
         }
 
         function showSoloSetup() {
@@ -1255,6 +1295,29 @@
                 // Heartbeat from the host — answer so they know we're alive too
                 const conn = netState.conns && netState.conns[0];
                 if (conn && conn.open) { try { conn.send({ t: 'pong' }); } catch (e) {} }
+                return;
+            }
+
+            if (msg.t === 'matchEnded') {
+                // Deliberate close from the host, not a dropped connection — the reconnect
+                // watchdog must NOT keep trying to rebuild this, or the player would be stuck
+                // silently retrying against a room that no longer exists.
+                netState.hasEverJoined = false;
+                netState.reconnecting = false;
+                netState.pendingActions = [];
+                if (netState.watchdogTimer) { clearInterval(netState.watchdogTimer); netState.watchdogTimer = null; }
+                if (netState.peer && !netState.peer.destroyed) {
+                    try { netState.peer.destroy(); } catch (e) {}
+                }
+                netState.conns = [];
+                netState.peer = null;
+                netState.mode = 'solo';
+                clientView = null;
+
+                showToast(msg.message || 'The host ended the match.', 'error');
+                document.getElementById('game-screen').classList.add('hidden');
+                document.getElementById('join-screen').classList.add('hidden');
+                document.getElementById('mode-screen').classList.remove('hidden');
                 return;
             }
 
@@ -3532,20 +3595,9 @@
             document.getElementById('win-subtitle').textContent = subtitle;
             document.getElementById('scores-list').innerHTML = scoresHTML;
 
-            // Add Next Round button
-            const existingNextBtn = document.getElementById('next-round-btn');
-            if (existingNextBtn) existingNextBtn.remove();
-
-            const nextRoundBtn = document.createElement('button');
-            nextRoundBtn.id = 'next-round-btn';
-            nextRoundBtn.className = 'mt-4 w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-bold rounded-2xl transition';
-            nextRoundBtn.textContent = 'Next Round →';
-            nextRoundBtn.onclick = startNextRound;
-
-            document.getElementById('win-modal').querySelector('.bg-white').appendChild(nextRoundBtn);
-
             document.getElementById('win-modal').classList.remove('hidden');
             document.getElementById('win-modal').classList.add('flex');
+            updateWinModalControls();
 
             saveGameToLocalStorage();
             if (netState.mode === 'host') broadcastViews();
@@ -3578,12 +3630,22 @@
             document.getElementById('win-subtitle').textContent = payload.subtitle;
             document.getElementById('scores-list').innerHTML = scoresHTML;
 
-            const existingNextBtn = document.getElementById('next-round-btn');
-            if (existingNextBtn) existingNextBtn.remove();
-
             const modal = document.getElementById('win-modal');
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            updateWinModalControls();
+        }
+
+        // Only the host (or solo, who IS effectively the host) gets to decide whether to
+        // continue the match or end it — that decision affects every other player, so no
+        // client should see an actionable button for it. Everyone else gets a passive message.
+        function updateWinModalControls() {
+            const controls = document.getElementById('win-host-controls');
+            const waiting = document.getElementById('win-waiting-message');
+            const isDecisionMaker = netState.mode !== 'client';
+            if (controls) controls.classList.toggle('hidden', !isDecisionMaker);
+            if (controls) controls.classList.toggle('flex', isDecisionMaker);
+            if (waiting) waiting.classList.toggle('hidden', isDecisionMaker);
         }
 
         function closeWinModal() {
@@ -3620,6 +3682,8 @@
         }
 
         function startNextRound() {
+            if (netState.mode === 'client') return; // decision belongs to the host; button is hidden anyway
+
             closeWinModal();
 
             const players = gameState.players.map(p => ({
@@ -3660,15 +3724,44 @@
             startTurnTimer();
             updateTurnStatus(`Round ${gameState.roundNumber} started. ${players[gameState.currentPlayerIndex].name} begins.`);
             saveGameToLocalStorage();
+            if (netState.mode === 'host') broadcastViews();
         }
 
-        function newGameFromWin() {
+        // "End Match" from the win screen. Solo just resets locally like it always did. Host
+        // mode is the one that matters: this ends the whole session for everyone, not just the
+        // host's own view, so it confirms first and explicitly tells every connected client
+        // before tearing the room down — otherwise clients would be left hanging on a dead
+        // connection that the reconnect watchdog would keep retrying forever.
+        function endMatchFromWin() {
+            if (netState.mode === 'client') return; // decision belongs to the host; button is hidden anyway
+
+            if (netState.mode === 'host') {
+                if (!confirm('End the match for everyone? This closes the room.')) return;
+
+                (netState.conns || []).forEach(conn => {
+                    if (conn && conn.open) {
+                        try { conn.send({ t: 'matchEnded', message: 'The host ended the match.' }); } catch (e) {}
+                    }
+                });
+
+                if (netState.watchdogTimer) { clearInterval(netState.watchdogTimer); netState.watchdogTimer = null; }
+                if (netState.peer && !netState.peer.destroyed) {
+                    try { netState.peer.destroy(); } catch (e) {}
+                }
+                netState.conns = [];
+                netState.peer = null;
+            }
+
             closeWinModal();
-            // Go back to setup
             document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('setup-screen').classList.remove('hidden');
-            // Clear local storage for fresh start
+            document.getElementById('host-lobby-screen').classList.add('hidden');
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('mode-screen').classList.remove('hidden');
             localStorage.removeItem('rummikubGameState');
+
+            netState.mode = 'solo';
+            netState.hasEverJoined = false;
+            gameState.gameStarted = false;
         }
 
         function newGame() {
