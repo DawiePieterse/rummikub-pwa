@@ -143,45 +143,69 @@
         }
 
         /* Marks tiles just placed/moved on the board this turn — visible to every player, so
-           everyone can see at a glance what just changed. Clears the instant the turn ends. */
-        .tile.newly-placed {
-            animation: newlyPlacedGlow 1.6s ease-in-out infinite;
+           everyone can see at a glance what just changed. Clears the instant the turn ends.
+           The glow lives on a pseudo-element whose OPACITY is animated rather than animating
+           box-shadow directly: opacity is composited on the GPU, whereas an animated box-shadow
+           forces a full repaint every frame on every glowing tile — a real battery cost when
+           several tiles pulse at once. */
+        .tile.newly-placed::after,
+        .tile.owed-to-board::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            will-change: opacity;
         }
-        @keyframes newlyPlacedGlow {
-            0%, 100% { box-shadow: 0 0 6px 2px rgba(10, 132, 255, 0.55), 0 4px 10px -2px rgb(0 0 0 / 0.35); }
-            50% { box-shadow: 0 0 14px 5px rgba(10, 132, 255, 0.85), 0 4px 10px -2px rgb(0 0 0 / 0.35); }
+        .tile.newly-placed::after {
+            box-shadow: 0 0 14px 5px rgba(10, 132, 255, 0.85);
+            animation: glowPulse 1.6s ease-in-out infinite;
         }
 
         /* Marks tiles in the rack that were pulled off the table this turn and still need to go
            back before the turn can end — a distinct orange pulse, deliberately different from the
            blue "just placed" glow, so it reads as "unfinished business" rather than "recently done." */
-        .tile.owed-to-board {
-            animation: owedToBoardGlow 1.3s ease-in-out infinite;
+        .tile.owed-to-board::after {
+            box-shadow: 0 0 15px 6px rgba(255, 149, 0, 0.9);
+            animation: glowPulse 1.3s ease-in-out infinite;
         }
-        @keyframes owedToBoardGlow {
-            0%, 100% { box-shadow: 0 0 6px 2px rgba(255, 149, 0, 0.6), 0 4px 10px -2px rgb(0 0 0 / 0.35); }
-            50% { box-shadow: 0 0 15px 6px rgba(255, 149, 0, 0.9), 0 4px 10px -2px rgb(0 0 0 / 0.35); }
+        @keyframes glowPulse {
+            0%, 100% { opacity: 0.45; }
+            50% { opacity: 1; }
         }
 
         /* Inverted "it's YOUR turn" name pill: gentle breathing glow so it catches the eye
            without being distracting. */
         .turn-name-pulse {
-            animation: turnNamePulse 2s ease-in-out infinite;
+            position: relative;
         }
-        @keyframes turnNamePulse {
-            0%, 100% { box-shadow: 0 0 4px 1px rgba(10, 132, 255, 0.45); }
-            50% { box-shadow: 0 0 14px 4px rgba(10, 132, 255, 0.8); }
+        .turn-name-pulse::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            box-shadow: 0 0 14px 4px rgba(10, 132, 255, 0.8);
+            animation: glowPulse 2s ease-in-out infinite;
+            will-change: opacity;
         }
 
         /* End Turn button once it's actually pressable: brighter and pulsing, so finishing
-           the turn is impossible to miss. */
+           the turn is impossible to miss. Transform-only animation (compositor-friendly). */
         #btn-end-turn.end-turn-ready {
             background-color: #FF9F0A !important;
+            box-shadow: 0 0 12px 3px rgba(255, 159, 10, 0.6);
             animation: endTurnReadyPulse 1.4s ease-in-out infinite;
         }
         @keyframes endTurnReadyPulse {
-            0%, 100% { box-shadow: 0 0 5px 1px rgba(255, 159, 10, 0.5); transform: scale(1); }
-            50% { box-shadow: 0 0 16px 5px rgba(255, 159, 10, 0.85); transform: scale(1.025); }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.025); }
+        }
+
+        /* All decorative looping animations stop while the app is backgrounded — browsers
+           throttle timers when hidden but can still keep compositing/animating. */
+        body.app-hidden *, body.app-hidden *::after, body.app-hidden *::before {
+            animation-play-state: paused !important;
         }
 
         #turn-timer-ring {
@@ -269,13 +293,17 @@
         }
 
         .joker-stealable {
-            animation: pulseJoker 1.5s infinite ease-in-out;
             cursor: pointer;
         }
-
-        @keyframes pulseJoker {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 159, 10, 0.4); }
-            50% { box-shadow: 0 0 0 8px rgba(255, 159, 10, 0); }
+        .joker-stealable::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            pointer-events: none;
+            box-shadow: 0 0 0 8px rgba(255, 159, 10, 0.45);
+            animation: glowPulse 1.5s infinite ease-in-out;
+            will-change: opacity;
         }
 
         .toast {
@@ -794,6 +822,10 @@
             tableMelds: [],        // [{ id: string, tiles: array }]
             pool: [],
             playedThisTurn: false,
+            // playedThisTurn is true for ANY board activity, including pure table rearrangement.
+            // This one is stricter: it's only true once a tile has actually left the rack for the
+            // board, which is what the rules require before a turn may be passed.
+            playedTileFromRackThisTurn: false,
             gameStarted: false,
             selectedTileIds: new Set(),
             // These were previously never initialized, which caused two real bugs:
@@ -1111,6 +1143,7 @@
             gameState.currentPlayerIndex = 0;
             gameState.tableMelds = [];
             gameState.playedThisTurn = false;
+            gameState.playedTileFromRackThisTurn = false;
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0;
             gameState.turnMeldIds = [];
@@ -1263,8 +1296,8 @@
 
         // One persistent loop drives everything network-health related. Client: background
         // auto-retry with backoff + silently-dead-connection detection. Host: heartbeat pings
-        // and dead-client sweeps. Runs every 2s regardless of user interaction, so recovery
-        // no longer depends on someone tapping the screen.
+        // and dead-client sweeps. Runs on a 4s cadence — comfortably frequent enough for the
+        // 6s ping interval and 20s staleness window, while halving CPU wake-ups versus 2s.
         function startNetWatchdog() {
             if (netState.watchdogTimer) return;
             netState.watchdogTimer = setInterval(() => {
@@ -1285,7 +1318,7 @@
                 } else if (netState.mode === 'host') {
                     hostHeartbeatSweep();
                 }
-            }, 2000);
+            }, 4000);
         }
 
         function handleClientMessage(msg) {
@@ -1362,6 +1395,7 @@
                 }
 
                 renderAll();
+                startTimerLoopIfNeeded(); // client deadlines arrive by broadcast, not locally
 
                 if (clientView.winner && clientView.winner.seq !== netState.lastShownWinSeq) {
                     netState.lastShownWinSeq = clientView.winner.seq;
@@ -1454,6 +1488,7 @@
                 players: gameState.players.map(p => ({ name: p.name, rackCount: p.rack.length, hasInitial: p.hasInitial })),
                 initialPointsThisTurn: gameState.initialPointsThisTurn,
                 playedThisTurn: gameState.playedThisTurn,
+                playedTileFromRackThisTurn: gameState.playedTileFromRackThisTurn,
                 hasDrawnThisTurn: gameState.hasDrawnThisTurn,
                 justDrawnTileId: (gameState.justDrawnTileIds || {})[index] ?? null,
                 newlyPlacedTileIds: gameState.newlyPlacedTileIds,
@@ -1694,11 +1729,33 @@
         // (see confirmPassToNext) rather than starting while the pass modal is still showing.
         let lastTickRemaining = null; // last second we played an urgency tick for, avoids repeats
 
+        let turnTimerLoop = null;
+
+        // The countdown loop is started on demand and shuts itself down the moment there's
+        // nothing to count, so an idle app (lobby, menus, timer off, backgrounded) costs no CPU.
+        function startTimerLoopIfNeeded() {
+            if (turnTimerLoop) return;
+            if (!getActiveTurnDeadline()) { updateTurnTimerDisplay(); return; }
+            turnTimerLoop = setInterval(() => {
+                const deadline = getActiveTurnDeadline();
+                if (!deadline) { stopTimerLoop(); updateTurnTimerDisplay(); return; }
+                updateTurnTimerDisplay();
+                if (netState.mode !== 'client' && Date.now() >= deadline) {
+                    handleTurnTimeout();
+                }
+            }, 500);
+        }
+
+        function stopTimerLoop() {
+            if (turnTimerLoop) { clearInterval(turnTimerLoop); turnTimerLoop = null; }
+        }
+
         function startTurnTimer() {
             gameState.turnDeadline = gameState.turnTimerSeconds > 0
                 ? Date.now() + gameState.turnTimerSeconds * 1000
                 : null;
             lastTickRemaining = null; // fresh countdown, no stale tick state carried over
+            startTimerLoopIfNeeded();
         }
 
         function getActiveTurnDeadline() {
@@ -1774,8 +1831,10 @@
 
             const wasSolo = netState.mode === 'solo';
 
-            // Case 1: they made a valid play but never tapped End Turn — keep the play, just pass.
-            if (gameState.playedThisTurn && isBoardFullyValid()) {
+            // Case 1: they made a real play (or already drew) and never tapped End Turn — keep it
+            // and just pass. Table rearrangement alone doesn't qualify: it isn't a move, so it
+            // falls through to the reset-and-draw branch below, same as doing nothing.
+            if ((gameState.playedTileFromRackThisTurn || gameState.hasDrawnThisTurn) && isBoardFullyValid()) {
                 const msg = "⏱️ Time's up! Your play was kept and the turn passed automatically.";
                 actingPlayerIndex = gameState.currentPlayerIndex;
                 reportActionError(msg);
@@ -1883,6 +1942,7 @@
             meld.tiles = meld.tiles.map(t => t.id === jokerId ? replacement : t);
 
             clearJustDrawnFor(gameState.currentPlayerIndex);
+            gameState.playedTileFromRackThisTurn = true; // the replacement tile came from the rack
 
             // Glow the replacement tile for everyone until this player's turn ends
             gameState.newlyPlacedTileIds.push(replacement.id);
@@ -2584,31 +2644,35 @@
             const hasSelection = getSelectedIds().size > 0;
             const myTurn = isMyTurn();
 
-            let hasDrawn, poolCount, playedThisTurn, hasPendingJoker;
+            let hasDrawn, poolCount, playedThisTurn, hasPendingJoker, playedFromRack;
             if (netState.mode === 'client') {
                 if (!clientView) return;
                 hasDrawn = clientView.hasDrawnThisTurn;
                 poolCount = clientView.poolCount;
                 playedThisTurn = clientView.playedThisTurn;
                 hasPendingJoker = !!clientView.hasPendingJokerRetrieval;
+                playedFromRack = !!clientView.playedTileFromRackThisTurn;
             } else {
                 hasDrawn = gameState.hasDrawnThisTurn;
                 poolCount = gameState.pool.length;
                 playedThisTurn = gameState.playedThisTurn;
                 hasPendingJoker = !!gameState.pendingJokerRetrieval;
+                playedFromRack = !!gameState.playedTileFromRackThisTurn;
             }
 
             // If you have already drawn this turn, you cannot play any more tiles
             document.getElementById('btn-lay-meld').disabled = !myTurn || hasDrawn || !hasSelection;
             
-            // Draw button - disabled if you've already played or drawn
-            const canDraw = poolCount > 0 && !playedThisTurn;
+            // Draw button — still available after merely rearranging the table, since drawing is
+            // the legitimate way out of a rearrangement you couldn't turn into a play.
+            const canDraw = poolCount > 0 && !playedFromRack && !hasDrawn;
             document.getElementById('btn-draw').disabled = !myTurn || !canDraw;
 
             // End Turn button
             const endTurnBtn = document.getElementById('btn-end-turn');
             if (endTurnBtn) {
-                const canEnd = myTurn && (playedThisTurn || hasPendingJoker);
+                // Only a genuine play (a tile off the rack) or a draw permits passing.
+                const canEnd = myTurn && (playedFromRack || hasDrawn || hasPendingJoker);
                 endTurnBtn.disabled = !canEnd;
                 // Bright pulsing highlight when it's actually pressable — makes "your move is
                 // done, pass it on" impossible to miss.
@@ -2640,6 +2704,13 @@
         let audioUnlocked = false;
 
         function getAudioContext() {
+            // A context can end up 'closed' after an OS-level audio interruption (call, another
+            // app taking the audio session, backgrounding on iOS). Once closed it can never be
+            // resumed — it has to be rebuilt from scratch.
+            if (audioCtx && audioCtx.state === 'closed') {
+                audioCtx = null;
+                audioUnlocked = false;
+            }
             if (!audioCtx) {
                 try {
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -2647,22 +2718,26 @@
                     return null; // Web Audio unsupported — sounds just silently no-op
                 }
             }
-            if (audioCtx.state === 'suspended') {
+            // iOS uses a non-standard 'interrupted' state alongside the usual 'suspended'.
+            if (audioCtx.state === 'suspended' || audioCtx.state === 'interrupted') {
                 audioCtx.resume().catch(() => {});
             }
             return audioCtx;
         }
 
-        // iOS Safari (and some other mobile browsers) won't let a page play any audio at all
-        // until it's explicitly unlocked by a real, synchronous user gesture — and that unlock
-        // needs an actual sound scheduled during the gesture itself, not just context.resume().
-        // This runs once on the very first tap/click anywhere on the page, well before any game
-        // sound is needed, so by the time one actually plays the context is already running.
-        function unlockAudioOnFirstInteraction() {
-            if (audioUnlocked) return;
-            audioUnlocked = true;
+        // Called whenever the app might have lost its audio session — on returning to the
+        // foreground, on regaining network, and on any tap. Resuming outside a user gesture is
+        // unreliable on iOS, so the tap path also re-primes with a real (silent) scheduled tone,
+        // which is what actually reopens the audio session.
+        function ensureAudioAlive(fromUserGesture) {
             const ctx = getAudioContext();
             if (!ctx) return;
+            if (ctx.state === 'running') return;
+            ctx.resume().catch(() => {});
+            if (fromUserGesture) primeAudio(ctx);
+        }
+
+        function primeAudio(ctx) {
             try {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
@@ -2671,11 +2746,32 @@
                 gain.connect(ctx.destination);
                 osc.start(ctx.currentTime);
                 osc.stop(ctx.currentTime + 0.05);
-            } catch (e) { /* ignore — worst case, the lazy unlock in getAudioContext() still applies */ }
+                audioUnlocked = true;
+            } catch (e) { /* ignore — the lazy resume in getAudioContext() still applies */ }
         }
+
+        // iOS Safari (and some other mobile browsers) won't let a page play any audio at all
+        // until it's explicitly unlocked by a real, synchronous user gesture — and that unlock
+        // needs an actual sound scheduled during the gesture itself, not just context.resume().
+        // This runs once on the very first tap/click anywhere on the page, well before any game
+        // sound is needed, so by the time one actually plays the context is already running.
+        function unlockAudioOnFirstInteraction() {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            if (ctx.state === 'running' && audioUnlocked) return;
+            primeAudio(ctx);
+        }
+        // Deliberately NOT { once: true }: the audio session can be torn down later by
+        // backgrounding or an OS interruption, and only a real user gesture can reliably bring
+        // it back. Keeping these listeners alive means the very next tap silently repairs audio.
         ['pointerdown', 'touchstart', 'click'].forEach(evt => {
-            document.addEventListener(evt, unlockAudioOnFirstInteraction, { once: true, capture: true });
+            document.addEventListener(evt, unlockAudioOnFirstInteraction, { capture: true, passive: true });
         });
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') ensureAudioAlive(false);
+        });
+        window.addEventListener('focus', () => ensureAudioAlive(false));
+        window.addEventListener('online', () => ensureAudioAlive(false));
 
         function isSoundEnabled() {
             try {
@@ -2977,6 +3073,7 @@
             // Mark that we played this turn
             clearJustDrawnFor(gameState.currentPlayerIndex);
             gameState.playedThisTurn = true;
+            gameState.playedTileFromRackThisTurn = true; // a real tile left the rack
 
             // Any of these tiles that were owed back to the table are settled now
             if (gameState.pulledFromTableIds && gameState.pulledFromTableIds.length) {
@@ -3085,6 +3182,7 @@
 
             clearJustDrawnFor(gameState.currentPlayerIndex);
             gameState.playedThisTurn = true;
+            gameState.playedTileFromRackThisTurn = true; // a real tile left the rack
 
             // Any of these tiles that were owed back to the table are settled now
             if (gameState.pulledFromTableIds && gameState.pulledFromTableIds.length) {
@@ -3123,6 +3221,16 @@
 
             const currentPlayer = getCurrentPlayer();
             if (!currentPlayer || gameState.pool.length === 0) return;
+
+            // Drawing means no play was made, so any table manipulation done this turn was never
+            // legitimised — put the board back exactly as the turn started before taking the tile.
+            if (!gameState.playedTileFromRackThisTurn && gameState.playedThisTurn) {
+                const snap = gameState.turnSnapshot;
+                if (snap && snap.playerIndex === gameState.currentPlayerIndex) {
+                    restoreFromSnapshot(snap);
+                    showToast('Your table rearrangement was undone — you drew instead of playing.', 'warning');
+                }
+            }
 
             // Draw one tile
             const drawnTile = gameState.pool.shift();
@@ -3198,6 +3306,7 @@
 
             gameState.initialPointsThisTurn = 0;
             gameState.playedThisTurn = false;
+            gameState.playedTileFromRackThisTurn = false;
             gameState.hasDrawnThisTurn = false;
             gameState.turnMeldIds = [];
             if (gameState.justDrawnTileIds) delete gameState.justDrawnTileIds[snap.playerIndex];
@@ -3252,6 +3361,17 @@
             // same turn. If that never happened, undo the whole retrieval before anything else.
             if (revertPendingJokerRetrieval(currentPlayer)) {
                 reportActionError("You didn't replay the joker you took — it's been put back where it was.");
+            }
+
+            // Core rule: a turn may only be passed after actually playing at least one tile from
+            // your own rack, or drawing. Shuffling tiles around the table is only legal in
+            // service of a play — on its own it isn't a move, so it can't end the turn.
+            if (!gameState.playedTileFromRackThisTurn && !gameState.hasDrawnThisTurn) {
+                const rearranged = gameState.playedThisTurn; // board touched, but nothing played
+                reportActionError(rearranged
+                    ? "Rearranging the table isn't a move on its own — play a tile from your rack, or draw a tile (which undoes the rearrangement)."
+                    : "Play at least one tile from your rack, or tap Draw Tile to end your turn.");
+                return;
             }
 
             // If they haven't made their initial meld yet, any melds placed this turn
@@ -3317,6 +3437,7 @@
             // Prepare for next turn
             gameState.currentPlayerIndex = nextIndex;
             gameState.playedThisTurn = false;
+            gameState.playedTileFromRackThisTurn = false;
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0; // Reset initial meld progress for next player
             gameState.turnMeldIds = [];
@@ -3461,6 +3582,7 @@
             gameState.currentPlayerIndex = 0;
             gameState.tableMelds = [];
             gameState.playedThisTurn = false;
+            gameState.playedTileFromRackThisTurn = false;
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0;
             gameState.consecutiveEmptyTurns = 0;
@@ -3700,6 +3822,7 @@
             gameState.currentPlayerIndex = (gameState.roundNumber - 1) % players.length;
             gameState.tableMelds = [];
             gameState.playedThisTurn = false;
+            gameState.playedTileFromRackThisTurn = false;
             gameState.hasDrawnThisTurn = false;
             gameState.consecutiveEmptyTurns = 0;
             gameState.initialPointsThisTurn = 0;
@@ -3788,6 +3911,7 @@
             gameState.currentPlayerIndex = 0;
             gameState.tableMelds = [];
             gameState.playedThisTurn = false;
+            gameState.playedTileFromRackThisTurn = false;
             gameState.consecutiveEmptyTurns = 0;
             gameState.hasDrawnThisTurn = false;
             gameState.initialPointsThisTurn = 0;
@@ -3828,6 +3952,7 @@
                     tableMelds: gameState.tableMelds,
                     pool: gameState.pool,
                     playedThisTurn: gameState.playedThisTurn,
+                    playedTileFromRackThisTurn: gameState.playedTileFromRackThisTurn,
                     hasDrawnThisTurn: gameState.hasDrawnThisTurn,
                     initialPointsThisTurn: gameState.initialPointsThisTurn,
                     turnMeldIds: gameState.turnMeldIds,
@@ -3859,6 +3984,7 @@
                 gameState.tableMelds = parsed.tableMelds || [];
                 gameState.pool = parsed.pool || [];
                 gameState.playedThisTurn = parsed.playedThisTurn || false;
+                gameState.playedTileFromRackThisTurn = parsed.playedTileFromRackThisTurn || false;
                 gameState.hasDrawnThisTurn = parsed.hasDrawnThisTurn || false;
                 gameState.initialPointsThisTurn = parsed.initialPointsThisTurn || 0;
                 gameState.turnMeldIds = parsed.turnMeldIds || [];
@@ -4055,6 +4181,7 @@
 • 5-6 players: choose the "XP" tile set (160 tiles, 4 jokers) when starting a game or hosting a room — Standard (106 tiles) only supports up to 4
 • Turn Timer: set a per-turn time limit (default 30s, or off) when starting a game. Running out of time while you haven't played draws a tile for you automatically; running out mid-manipulation undoes it and draws 3 penalty tiles, per the official rules
 • Drawing a tile always ends your turn immediately — no need to tap End Turn afterward
+• You must play at least one tile from your own rack to end your turn. Rearranging tiles already on the table is only allowed in service of a play — on its own it isn't a move, so you'll need to either play a tile or draw one (drawing undoes the rearrangement)
 • Drag & drop: drag rack tiles onto "Drop here" to form a new meld, or onto an existing meld to add to it. Once you have your own initial meld, you can also drag tiles already on the table — onto another meld, or back to your own rack. A meld will split in two if you pull a tile out of the middle of a long run and both halves are still valid; moves that would leave an invalid meld behind are rejected
 
 Hotseat only (pass the iPad). More manipulation & joker stealing coming soon.
@@ -4079,15 +4206,20 @@ Have fun on the Weskus!`;
             initPlayerCountButtons();
             registerServiceWorker();
 
-            // Turn timer: one shared loop updates the visible countdown everywhere, and (on the
-            // authoritative host/solo device only) enforces the timeout once it passes.
-            setInterval(() => {
-                updateTurnTimerDisplay();
-                const deadline = getActiveTurnDeadline();
-                if (netState.mode !== 'client' && deadline && Date.now() >= deadline) {
-                    handleTurnTimeout();
+            // Turn timer: the countdown loop only runs while a deadline is actually active, and
+            // stops completely otherwise (menus, setup screens, timer set to Off, or app in the
+            // background). A permanently-ticking interval was keeping the CPU awake for the whole
+            // session and was the single biggest battery drain.
+            startTimerLoopIfNeeded();
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    document.body.classList.remove('app-hidden');
+                    startTimerLoopIfNeeded();
+                } else {
+                    document.body.classList.add('app-hidden');
+                    stopTimerLoop();
                 }
-            }, 500);
+            });
 
             // Try to resume a previous solo (pass & play) game
             const resumed = loadGameFromLocalStorage();
