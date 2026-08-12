@@ -854,6 +854,28 @@
         };
 
         // ==================== NETWORKING (WebRTC / PeerJS) ====================
+        // STUN alone fails on networks with symmetric NAT or client isolation (some guest
+        // wifi, some mesh routers); this TURN relay is the fallback so peers can still connect
+        // when a direct path isn't possible.
+        const ICE_CONFIG = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+                { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+            ]
+        };
+
+        // sessionStorage (not localStorage): survives a refresh/reload of THIS tab — enough to
+        // let a client reclaim its seat after a reload instead of the host treating it as a
+        // brand new player — but each new tab/window still gets a fresh identity. localStorage
+        // would make two tabs on the same device (a very natural way to first test this, and a
+        // real scenario if a family shares one iPad across two Safari tabs) collide into a
+        // single seat, since they'd share the same clientId. Same tradeoff Monopoly PWA makes
+        // for the same reason (see its networking section).
+        let myClientId = sessionStorage.getItem('rummikub-clientId') || ('p_' + Math.random().toString(36).slice(2, 10));
+        sessionStorage.setItem('rummikub-clientId', myClientId);
+
         // mode: 'solo' (pass & play, one device) | 'host' | 'client'
         let netState = {
             mode: 'solo',
@@ -945,9 +967,9 @@
             netState.roomCode = code;
             netState.conns = [null]; // index 0 = host itself, no connection needed
 
-            gameState.players = [{ name: hostName, rack: [], hasInitial: false, score: 0 }];
+            gameState.players = [{ name: hostName, clientId: myClientId, rack: [], hasInitial: false, score: 0 }];
 
-            const peer = new Peer('rk-' + code.toLowerCase());
+            const peer = new Peer('rk-' + code.toLowerCase(), { config: ICE_CONFIG });
             netState.peer = peer;
 
             peer.on('open', () => {
@@ -1024,34 +1046,33 @@
             if (msg.t === 'pong') return; // heartbeat answer; activity timestamp already updated
 
             if (msg.t === 'join') {
-                if (gameState.gameStarted) {
-                    // Mid-game REJOIN: a disconnected player reclaiming their seat. Verified by
-                    // matching both the seat index and the exact name they joined with.
-                    const ri = msg.rejoinIndex;
-                    const nm = (msg.name || '').trim();
-                    if (ri !== undefined && ri !== null && gameState.players[ri] &&
-                        gameState.players[ri].name === nm) {
-                        netState.conns[ri] = conn;
-                        conn._playerIndex = ri;
-                        conn._lastActivityAt = Date.now();
-                        conn.send({ t: 'joined', index: ri });
-                        conn.send({ t: 'state', view: buildViewFor(ri) });
-                        showToast(`${nm} reconnected.`, 'success');
-                        return;
+                const name = (msg.name || 'Player').trim() || 'Player';
+                const clientId = msg.clientId;
+
+                // Reclaim an existing seat by persistent clientId — covers both a dropped
+                // connection reconnecting and a full page refresh (which loses everything in
+                // netState, including any in-memory seat index, but not localStorage).
+                const existingIndex = clientId ? gameState.players.findIndex(p => p.clientId === clientId) : -1;
+                if (existingIndex !== -1) {
+                    gameState.players[existingIndex].name = name; // pick up a name edit on rejoin
+                    netState.conns[existingIndex] = conn;
+                    conn._playerIndex = existingIndex;
+                    conn._lastActivityAt = Date.now();
+                    conn.send({ t: 'joined', index: existingIndex });
+                    if (gameState.gameStarted) {
+                        conn.send({ t: 'state', view: buildViewFor(existingIndex) });
+                        showToast(`${name} reconnected.`, 'success');
+                    } else {
+                        renderHostLobby();
+                        broadcastLobby();
                     }
-                    conn.send({ t: 'error', message: 'Game already in progress.' });
                     return;
                 }
-                // Lobby rejoin: reclaim the same seat rather than duplicating the player
-                const lri = msg.rejoinIndex;
-                if (lri !== undefined && lri !== null && gameState.players[lri] &&
-                    gameState.players[lri].name === (msg.name || '').trim()) {
-                    netState.conns[lri] = conn;
-                    conn._playerIndex = lri;
-                    conn._lastActivityAt = Date.now();
-                    conn.send({ t: 'joined', index: lri });
-                    renderHostLobby();
-                    broadcastLobby();
+
+                if (gameState.gameStarted) {
+                    // No seat for this clientId and the game's already running — a genuinely new
+                    // player can't join mid-game.
+                    conn.send({ t: 'error', message: 'Game already in progress.' });
                     return;
                 }
                 if (gameState.players.length >= getMaxPlayers()) {
@@ -1059,8 +1080,7 @@
                     return;
                 }
                 const index = gameState.players.length;
-                const name = (msg.name || `Player ${index + 1}`).trim() || `Player ${index + 1}`;
-                gameState.players.push({ name, rack: [], hasInitial: false, score: 0 });
+                gameState.players.push({ name, clientId, rack: [], hasInitial: false, score: 0 });
                 netState.conns[index] = conn;
                 conn._playerIndex = index;
                 conn.send({ t: 'joined', index });
@@ -1212,7 +1232,7 @@
                     try { netState.peer.destroy(); } catch (e) { /* already gone */ }
                 }
 
-                const peer = new Peer();
+                const peer = new Peer({ config: ICE_CONFIG });
                 netState.peer = peer;
 
                 peer.on('open', () => {
@@ -1225,10 +1245,9 @@
                         netState.reconnectAttempts = 0;
                         netState.lastNetActivityAt = Date.now();
 
-                        const payload = { t: 'join', name: netState.myName };
-                        // If we already had a seat in a running game, ask for it back
-                        if (netState.hasEverJoined) payload.rejoinIndex = netState.myIndex;
-                        conn.send(payload);
+                        // clientId is persistent (localStorage), so the host can reclaim our seat
+                        // even after a full page reload wiped netState/hasEverJoined.
+                        conn.send({ t: 'join', name: netState.myName, clientId: myClientId });
 
                         flushPendingActions();
                     });
