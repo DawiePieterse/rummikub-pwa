@@ -1,0 +1,11 @@
+{
+  "name": "rummikub-pwa",
+  "private": true,
+  "description": "Rummikub for iPad: pass & play, over WiFi, or against the computer",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i tailwind.src.css -o tailwind.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
+  }
+}
