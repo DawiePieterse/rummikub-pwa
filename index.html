@@ -8,33 +8,11 @@
     <meta name="apple-mobile-web-app-title" content="Rummikub">
     <meta name="theme-color" content="#F2F2F7">
     <title>Rummikub PWA • 2-6 Players</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- tailwind.css is generated from this file: `npm install && npm run build:css` after adding
+         Tailwind classes (see tailwind.config.js). No runtime compiler, and it works offline. -->
+    <link rel="stylesheet" href="tailwind.css">
     <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" defer></script>
-    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Rummikub%20PWA%22%2C%22short_name%22%3A%22Rummikub%22%2C%22description%22%3A%22Play%20Rummikub%20with%202-4%20players%20over%20WiFi%20on%20separate%20iPads%2C%20or%20pass-and-play%20on%20one%20device.%22%2C%22start_url%22%3A%22.%2Findex.html%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F2F2F7%22%2C%22theme_color%22%3A%22%230A84FF%22%2C%22orientation%22%3A%22landscape%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20100%20100%27%253E%253Crect%20width%3D%27100%27%20height%3D%27100%27%20rx%3D%2722%27%20fill%3D%27%25230A84FF%27%2F%253E%253Ctext%20x%3D%2750%27%20y%3D%2766%27%20font-size%3D%2752%27%20font-family%3D%27-apple-system%2Csystem-ui%27%20font-weight%3D%27800%27%20text-anchor%3D%27middle%27%20fill%3D%27white%27%253ER%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
-    <script>
-        // Tailwind color scale overrides — remaps the named colors already used
-        // throughout the markup (amber, emerald, sky, red, yellow, zinc, violet,
-        // fuchsia, rose, blue) onto Apple's system color palette. No class names
-        // need to change; only what they resolve to.
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        amber:   { 100:'#EAF3FF', 200:'#0B5FBF', 300:'#0071E3', 400:'#0071E3', 500:'#0A84FF', 600:'#0071E3', 700:'#0059B3', 800:'#D6ECFF', 900:'#D6ECFF' },
-                        emerald: { 100:'#E3F9E9', 300:'#17853A', 400:'#30D158', 500:'#27AE4E', 600:'#1F9C46', 700:'#17853A', 900:'#E3F9E9' },
-                        sky:     { 500:'#7A79F5', 600:'#5E5CE6', 700:'#4A48C4', 900:'#E7E6FB' },
-                        red:     { 100:'#FFD9D6', 400:'#D70015', 600:'#FF453A', 700:'#D70015', 900:'#3A0906' },
-                        yellow:  { 400:'#FFD60A', 500:'#E6C200' },
-                        zinc:    { 900:'#1C1C1E', 950:'#0B0B0D' },
-                        violet:  { 700:'#8944D6', 900:'#3B1A66' },
-                        fuchsia: { 600:'#BF5AF2' },
-                        rose:    { 600:'#FF375F' },
-                        blue:    { 600:'#0A84FF', 700:'#0059B3' },
-                    }
-                }
-            }
-        };
-    </script>
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Rummikub%20PWA%22%2C%22short_name%22%3A%22Rummikub%22%2C%22description%22%3A%22Play%20Rummikub%20with%202-6%20players%20over%20WiFi%20on%20separate%20iPads%2C%20or%20pass-and-play%20on%20one%20device.%22%2C%22start_url%22%3A%22.%2Findex.html%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23F2F2F7%22%2C%22theme_color%22%3A%22%230A84FF%22%2C%22orientation%22%3A%22landscape%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%20100%20100%27%253E%253Crect%20width%3D%27100%27%20height%3D%27100%27%20rx%3D%2722%27%20fill%3D%27%25230A84FF%27%2F%253E%253Ctext%20x%3D%2750%27%20y%3D%2766%27%20font-size%3D%2752%27%20font-family%3D%27-apple-system%2Csystem-ui%27%20font-weight%3D%27800%27%20text-anchor%3D%27middle%27%20fill%3D%27white%27%253ER%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
     <style>
         body {
             font-family: ui-rounded, -apple-system, BlinkMacSystemFont, 'SF Pro Rounded', 'SF Pro Text', system-ui, sans-serif;
@@ -93,7 +71,7 @@
             pointer-events: none;
             z-index: 200;
             opacity: 0.94;
-            transform: scale(1.08) rotate(-2deg);
+            will-change: transform;
             box-shadow: 0 14px 28px rgba(0,0,0,0.55);
         }
         .drag-over {
@@ -235,13 +213,15 @@
             background: #0A84FF;
             color: #fff;
         }
-        .player-chip.current.mine {
-            box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.35);
-            animation: chipPulse 1.6s ease-in-out infinite;
-        }
-        @keyframes chipPulse {
-            0%, 100% { box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.35); }
-            50% { box-shadow: 0 0 0 6px rgba(10, 132, 255, 0.15); }
+        .player-chip.current.mine { position: relative; }
+        .player-chip.current.mine::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 9999px;
+            border: 3px solid rgba(10, 132, 255, 0.45);
+            pointer-events: none;
+            animation: glowPulse 1.6s ease-in-out infinite; /* opacity only: composited */
         }
         .chip-initial {
             font-size: 0.65rem;
@@ -262,7 +242,7 @@
 
         /* Marks tiles in the rack that were pulled off the table this turn and still need to go
            back before the turn can end — a distinct orange pulse, deliberately different from the
-           blue "just placed" glow, so it reads as "unfinished business" rather than "recently done." */
+           green "just placed" glow, so it reads as "unfinished business" rather than "recently done." */
         .tile.owed-to-board::after {
             box-shadow: 0 0 15px 6px rgba(255, 149, 0, 0.9);
             animation: glowPulse 1.3s ease-in-out infinite;
@@ -272,8 +252,6 @@
             50% { opacity: 1; }
         }
 
-        /* Inverted "it's YOUR turn" name pill: gentle breathing glow so it catches the eye
-           without being distracting. */
         /* End Turn button once it's actually pressable: brighter and pulsing, so finishing
            the turn is impossible to miss. Transform-only animation (compositor-friendly). */
         #btn-end-turn.end-turn-ready {
@@ -435,7 +413,7 @@
                     <span class="title-font text-5xl font-black text-white">R</span>
                 </div>
                 <h1 class="title-font text-6xl font-bold tracking-tighter">Rummikub</h1>
-                <p class="text-black/50 mt-1 text-lg">Multiplayer on the same WiFi — no server needed</p>
+                <p class="text-black/50 mt-1 text-lg">Play on one iPad, over WiFi, or against the computer</p>
             </div>
 
             <div class="bg-white rounded-3xl p-6 shadow-2xl border border-black/10">
@@ -486,7 +464,7 @@
                 First connection needs internet briefly (to find each other). Gameplay then runs over your WiFi.
             </p>
             <div class="text-center mt-2 text-xs text-black/25">
-                Rummikub LAN v2.0.0
+                Rummikub LAN v2.1
             </div>
         </div>
     </div>
@@ -508,25 +486,18 @@
                         <button type="button" onclick="selectHostTileVariant('standard')" data-variant="standard"
                                 class="host-tile-variant-btn active flex flex-col items-center justify-center py-2.5 rounded-2xl border border-amber-400 bg-amber-900/30 transition">
                             <span class="text-sm font-bold">Standard</span>
-                            <span class="text-xs text-amber-300/70">106 tiles • up to 4</span>
+                            <span class="text-xs text-amber-300/70">106 tiles • up to 4 players</span>
                         </button>
                         <button type="button" onclick="selectHostTileVariant('xp')" data-variant="xp"
                                 class="host-tile-variant-btn flex flex-col items-center justify-center py-2.5 rounded-2xl border border-black/20 bg-black/5 hover:bg-black/10 transition">
                             <span class="text-sm font-bold">XP</span>
-                            <span class="text-xs text-amber-300/70">160 tiles • up to 6</span>
+                            <span class="text-xs text-amber-300/70">160 tiles • up to 6 players</span>
                         </button>
                     </div>
 
                     <label class="block text-sm font-medium text-amber-200 mb-2">Turn Timer</label>
-                    <select id="host-timer-select"
-                            class="w-full bg-black/5 border border-black/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm mb-6 appearance-none">
-                        <option value="0">Off</option>
-                        <option value="15">15 seconds</option>
-                        <option value="30" selected>30 seconds (default)</option>
-                        <option value="45">45 seconds</option>
-                        <option value="60">60 seconds</option>
-                        <option value="90">90 seconds</option>
-                    </select>
+                    <select id="host-timer-select" data-timer-select
+                            class="w-full bg-black/5 border border-black/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm mb-6 appearance-none"></select>
 
                     <button onclick="hostCreateRoom()"
                             class="w-full py-4 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition-all text-white font-bold text-lg rounded-2xl shadow-lg">
@@ -615,12 +586,12 @@
                         <button onclick="selectTileVariant('standard')" data-variant="standard"
                                 class="tile-variant-btn active flex flex-col items-center justify-center py-2.5 rounded-2xl border border-amber-400 bg-amber-900/30 transition">
                             <span class="text-sm font-bold">Standard</span>
-                            <span class="text-xs text-amber-300/70">106 tiles • 2-4 players</span>
+                            <span class="text-xs text-amber-300/70">106 tiles • up to 4 players</span>
                         </button>
                         <button onclick="selectTileVariant('xp')" data-variant="xp"
                                 class="tile-variant-btn flex flex-col items-center justify-center py-2.5 rounded-2xl border border-black/20 bg-black/5 hover:bg-black/10 transition">
                             <span class="text-sm font-bold">XP</span>
-                            <span class="text-xs text-amber-300/70">160 tiles • 5-6 players</span>
+                            <span class="text-xs text-amber-300/70">160 tiles • up to 6 players</span>
                         </button>
                     </div>
                 </div>
@@ -655,15 +626,8 @@
                 <!-- Turn Timer -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-amber-200 mb-2">Turn Timer</label>
-                    <select id="solo-timer-select"
-                            class="w-full bg-black/5 border border-black/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm appearance-none">
-                        <option value="0">Off</option>
-                        <option value="15">15 seconds</option>
-                        <option value="30" selected>30 seconds (default)</option>
-                        <option value="45">45 seconds</option>
-                        <option value="60">60 seconds</option>
-                        <option value="90">90 seconds</option>
-                    </select>
+                    <select id="solo-timer-select" data-timer-select
+                            class="w-full bg-black/5 border border-black/20 focus:border-amber-400/60 transition px-4 py-2.5 rounded-2xl text-sm appearance-none"></select>
                 </div>
 
                 <!-- Player Names -->
@@ -680,11 +644,11 @@
                     <span class="text-2xl">→</span>
                 </button>
                 
-                <p class="text-center text-xs text-amber-300/50 mt-4">Hotseat • Pass &amp; Play mode • Works fully offline</p>
+                <p class="text-center text-xs text-amber-300/50 mt-4">Pass the device around, or let the computer take some seats</p>
             </div>
             
             <div class="text-center mt-6 text-xs text-amber-300/40">
-                v0.95 • Proper Groups, Runs & Joker validation • Click melds to add tiles
+                Rummikub LAN v2.1
             </div>
             <button onclick="backToModeScreen()" class="w-full text-center mt-4 text-sm text-black/50 hover:text-black/80">← Back</button>
         </div>
@@ -900,7 +864,7 @@
 
                 <div class="h-px bg-black/10 my-1 mx-2"></div>
                 
-                <button onclick="hideGameMenu(); showHelp()" class="w-full text-left px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-2xl flex items-center gap-x-3 text-sm">
+                <button onclick="showHelp()" class="w-full text-left px-4 py-3 hover:bg-black/5 active:bg-black/10 rounded-2xl flex items-center gap-x-3 text-sm">
                     <span class="text-xl w-6">📖</span> 
                     <span>How to Play (Rules)</span>
                 </button>
@@ -933,14 +897,14 @@
             turnMeldIds: [],        // meld ids created this turn while initial meld was still pending
             consecutiveEmptyTurns: 0, // tracks a pool-exhausted stalemate (see endTurn/endGameStalemate)
             turnSnapshot: null,     // board/rack state at the start of the active player's turn (for Recall)
-            justDrawnTileIds: {},   // playerIndex -> tileId: highlighted green in that player's rack until their NEXT move
+            justDrawnTileIds: {},   // playerIndex -> tileId: highlighted (amber ring) in that player's rack until their NEXT move
             newlyPlacedTileIds: [], // tiles placed/moved on the board this turn, glow for all players until it ends
             pulledFromTableIds: [], // tiles retracted from the table to this player's rack this turn, still owed back
             oneTileWarning: null,   // { seq, playerName } — broadcast to everyone when a rack drops to 1 tile
             turnTimerSeconds: 30,   // 0 = off; chosen at game start, persists for the match
             turnDeadline: null,     // Date.now() timestamp the current turn expires at, or null if timer is off
             lastActionSound: null,  // { seq, sound } — broadcast so every client hears game sounds too, not just the host
-            tileVariant: 'standard', // 'standard' (106 tiles, 2-4 players) or 'xp' (160 tiles, 5-6 players)
+            tileVariant: 'standard', // 'standard' (106 tiles, up to 4 players) or 'xp' (160 tiles, up to 6)
             pendingJokerRetrieval: null, // set when a joker is stolen; must be replayed this turn or it's undone
             jokerWarningGiven: false,    // End Turn with an unplayed stolen joker warns once before putting it back
             turnMoves: [],          // [{ tileId, tile, fromMeldId }] table tiles moved this turn — ghost markers at their old spot
@@ -949,7 +913,10 @@
             cumulativeScores: {},
             matchHistory: [],
             roundNumber: 1,
-            lastWinnerIndex: null   // seat that won the previous round — never starts the next one
+            lastWinnerIndex: null,  // seat that won the previous round — never starts the next one
+            lastWinnerPayload: null, // the round result shown in the win modal (also sent to clients)
+            matchInProgress: false, // true from the first deal until End Match; stays true between rounds
+            turnSeq: 0              // bumps at every turn boundary; stale async work (computer turns, queued actions) checks it
         };
 
         // ==================== STORAGE ====================
@@ -1011,15 +978,25 @@
         function describeTiles(tiles) {
             return tiles.map(describeTile).join(', ');
         }
+        // One-off events carry a sequence number so each device acts on them exactly once
+        function nextSeq(prev) {
+            return (prev ? prev.seq : 0) + 1;
+        }
         // Running commentary so players who look up late can see what just happened
         function logTurn(text) {
             const log = gameState.turnLog;
-            const seq = (log.length ? log[log.length - 1].seq : 0) + 1;
+            const seq = nextSeq(log[log.length - 1]);
             log.push({ seq, text });
             if (log.length > 40) log.shift();
         }
         function cleanName(raw, fallback = 'Player') {
             return (raw || fallback).trim() || fallback;
+        }
+        // Scores are keyed by name, so two players may never share one
+        function uniqueName(name, taken) {
+            let candidate = name, n = 2;
+            while (taken.includes(candidate)) candidate = `${name} ${n++}`;
+            return candidate;
         }
         function normalizeRoomCode(raw) {
             return (raw || '').trim().toUpperCase();
@@ -1078,9 +1055,7 @@
                 try { peer.reconnect(); return; } catch (e) { /* fall through to a full rebuild */ }
             }
             destroyPeer();
-            // If the broker still holds the id from the dead session, the peer is dropped and
-            // the next sweep tries again.
-            openHostPeer(netState.roomCode, () => destroyPeer());
+            openHostPeer(netState.roomCode, dropUnavailablePeer);
             if (Date.now() - netState.lastRoomToastAt > 30000) {
                 netState.lastRoomToastAt = Date.now();
                 showToast('Re-opening the room — players will reconnect automatically.', 'warning');
@@ -1106,7 +1081,11 @@
             // --- host link health ---
             hostRetryAt: 0,          // Date.now() before which ensureHostPeerAlive won't retry
             lastRoomToastAt: 0,      // throttles the "re-opening the room" toast
-            lastUnreachableToastAt: 0 // client: throttles the "host unreachable" toast
+            lastUnreachableToastAt: 0, // client: throttles the "host unreachable" toast
+            // --- client: last one-off event acted on, by kind ---
+            lastShownWinSeq: 0,
+            lastShownOneTileSeq: 0,
+            lastPlayedActionSoundSeq: 0
         };
         let clientView = null;           // client only: latest state pushed from host
         let clientSelectedTileIds = new Set(); // client only: local tile selection before sending an action
@@ -1125,6 +1104,15 @@
         function clientConnOpen() {
             const conn = getHostConn();
             return !!(conn && conn.open);
+        }
+        // "Silently dead" detection: a link that is technically open but has carried nothing (not
+        // even a heartbeat) for the staleness window is closed so it gets rebuilt. Returns true
+        // if it closed one.
+        const STALE_LINK_MS = 20000;
+        function closeStaleHostLink() {
+            if (!clientConnOpen() || !netState.lastNetActivityAt || Date.now() - netState.lastNetActivityAt <= STALE_LINK_MS) return false;
+            try { getHostConn().close(); } catch (e) { /* best effort */ }
+            return true;
         }
         function destroyPeer() {
             if (netState.peer && !netState.peer.destroyed) {
@@ -1164,13 +1152,17 @@
         }
 
         function backToModeScreen() {
-            teardownNetwork(); // leaving the lobby / join screen abandons the room
+            if (netState.mode === 'host' && gameState.matchInProgress) {
+                if (!confirm('Leave and close the room for everyone?')) return;
+            }
+            leaveMatch(); // leaving the lobby / join screen abandons the room
             showScreen('mode-screen');
         }
 
         function showHostSetup() {
             const sharedName = cleanName(document.getElementById('mode-name-input').value, '');
             showScreen('host-lobby-screen');
+            selectHostTileVariant(gameState.tileVariant); // the buttons must show what will actually be dealt
             if (sharedName) document.getElementById('host-name-input').value = sharedName;
         }
 
@@ -1192,17 +1184,21 @@
             setActiveOption('.host-tile-variant-btn', btn => btn.dataset.variant === variant);
         }
 
-        function hostCreateRoom() {
-            const hostName = cleanName(document.getElementById('host-name-input').value, 'Host');
-            const code = makeRoomCode();
-
+        function beginHosting(code) {
             netState.mode = 'host';
             netState.myIndex = 0;
             netState.roomCode = code;
-            netState.conns = [null]; // index 0 = host itself, no connection needed
+            netState.conns = gameState.players.map(() => null); // index 0 = host itself, no connection needed
+        }
+
+        function hostCreateRoom() {
+            stopGame();
+            const hostName = cleanName(document.getElementById('host-name-input').value, 'Host');
+            const code = makeRoomCode();
 
             gameState.players = [makePlayer(hostName, myClientId)];
             resetMatchTally();
+            beginHosting(code);
 
             const peer = openHostPeer(code);
             peer.on('open', () => {
@@ -1231,7 +1227,7 @@
             });
 
             peer.on('error', err => {
-                if (err && err.type === 'unavailable-id' && onUnavailable) { onUnavailable(); return; }
+                if (err && err.type === 'unavailable-id' && onUnavailable) { onUnavailable(peer); return; }
                 showToast('Connection error: ' + (err && err.type ? err.type : err), 'error');
             });
 
@@ -1239,19 +1235,19 @@
             return peer;
         }
 
+        // The broker still holds the id from a dead session: drop this peer and let the watchdog
+        // (ensureHostPeerAlive) try again in a few seconds.
+        function dropUnavailablePeer(peer) {
+            if (netState.peer === peer) destroyPeer();
+            else { try { peer.destroy(); } catch (e) { /* already gone */ } }
+        }
+
         // A host tab that reloads mid-game re-opens the same room id, so clients (which keep
         // retrying that id) reconnect and reclaim their seats by clientId. The signalling
         // server may still hold the old tab's id for a moment, so retry a few times.
-        function resumeHosting(code, attempt = 0) {
-            netState.mode = 'host';
-            netState.myIndex = 0;
-            netState.roomCode = code;
-            netState.conns = gameState.players.map(() => null);
-            openHostPeer(code, () => {
-                destroyPeer();
-                if (attempt < 5) setTimeout(() => resumeHosting(code, attempt + 1), 2000);
-                else showToast('Could not re-open the room. Players will need a new room code.', 'error');
-            });
+        function resumeHosting(code) {
+            beginHosting(code);
+            openHostPeer(code, dropUnavailablePeer);
             showToast(`Room ${code} restored — waiting for players to reconnect…`, 'info');
         }
 
@@ -1266,7 +1262,7 @@
                     conn._lastPingAt = now;
                     safeSend(conn, { t: 'ping' });
                 }
-                if (conn._lastActivityAt && now - conn._lastActivityAt > 20000) {
+                if (conn._lastActivityAt && now - conn._lastActivityAt > STALE_LINK_MS) {
                     try { conn.close(); } catch (e) { /* best effort */ }
                     handlePeerDisconnect(conn);
                 }
@@ -1289,7 +1285,7 @@
         // Computer players in a room are just seats without a connection; the host runs their turns.
         function hostAddBot() {
             if (gameState.players.length >= getMaxPlayers()) return;
-            gameState.players.push(makePlayer(nextBotName(gameState.players.map(p => p.name)), null, true));
+            gameState.players.push(makePlayer(nextBotName(gameState.players.map(p => p.name)), `bot_${Date.now()}_${gameState.players.length}`, true));
             netState.conns[gameState.players.length - 1] = null;
             renderHostLobby();
             broadcastLobby();
@@ -1322,7 +1318,7 @@
                 let index = clientId ? gameState.players.findIndex(p => p.clientId === clientId) : -1;
                 const rejoining = index !== -1;
                 if (!rejoining) {
-                    if (gameState.gameStarted) {
+                    if (gameState.matchInProgress) {
                         safeSend(conn, { t: 'error', message: 'Game already in progress.' });
                         return;
                     }
@@ -1334,16 +1330,19 @@
                 }
                 // Names key cumulativeScores, so they're fixed once the game starts; in the lobby
                 // a rejoin may still carry a name edit.
-                if (!gameState.gameStarted) {
-                    gameState.players[index].name = cleanName(msg.name, `Player ${index + 1}`);
+                if (!gameState.matchInProgress) {
+                    const others = gameState.players.filter((p, i) => i !== index).map(p => p.name);
+                    gameState.players[index].name = uniqueName(cleanName(msg.name, `Player ${index + 1}`), others);
                 }
                 const name = gameState.players[index].name;
 
+                const old = netState.conns[index];
+                if (old && old !== conn) { try { old.close(); } catch (e) { /* already gone */ } }
                 netState.conns[index] = conn;
                 conn._playerIndex = index;
                 conn._lastActivityAt = Date.now();
                 safeSend(conn, { t: 'joined', index });
-                if (gameState.gameStarted) {
+                if (gameState.matchInProgress) {
                     safeSend(conn, { t: 'state', view: buildViewFor(index) });
                     showToast(`${name} reconnected.`, 'success');
                 } else {
@@ -1359,6 +1358,7 @@
             if (msg.t === 'action') {
                 if (!gameState.gameStarted) return;
                 if (gameState.currentPlayerIndex !== index) return; // not their turn, ignore
+                if (msg.turn !== undefined && msg.turn !== gameState.turnSeq) return; // queued while offline, for a turn that's over
 
                 const handler = HOST_ACTIONS[msg.action];
                 if (!handler) return;
@@ -1403,11 +1403,26 @@
         function handlePeerDisconnect(conn) {
             const index = conn._playerIndex;
             if (index === undefined || index === null) return;
-            if (gameState.players[index]) {
-                showToast(`${gameState.players[index].name} disconnected.`, 'error');
-            }
-            // Their seat and rack stay intact so a rejoin (by clientId) can pick up where they left off
+            if (netState.conns[index] !== conn) return; // a stale close from a link this seat already replaced
             netState.conns[index] = null;
+            const player = gameState.players[index];
+            if (!player) return;
+            if (gameState.matchInProgress) {
+                // Their seat and rack stay intact so a rejoin (by clientId) can pick up where they left off
+                showToast(`${player.name} disconnected.`, 'error');
+                return;
+            }
+            // Still in the lobby: they've left, so free the seat and renumber everyone after them
+            showToast(`${player.name} left.`, 'info');
+            gameState.players.splice(index, 1);
+            netState.conns.splice(index, 1);
+            netState.conns.forEach((c, i) => {
+                if (!c) return;
+                c._playerIndex = i;
+                safeSend(c, { t: 'joined', index: i });
+            });
+            renderHostLobby();
+            broadcastLobby();
         }
 
         function broadcastLobby() {
@@ -1542,11 +1557,7 @@
             netState.watchdogTimer = setInterval(() => {
                 if (netState.mode === 'client') {
                     updateConnectionPill();
-                    // "Silently dead" detection: still technically open, but nothing has arrived
-                    // (not even heartbeat pings) for 20s — force a rebuild rather than hang.
-                    if (clientConnOpen() && netState.lastNetActivityAt &&
-                        Date.now() - netState.lastNetActivityAt > 20000) {
-                        try { netState.conns[0].close(); } catch (e) { /* best effort */ }
+                    if (closeStaleHostLink()) {
                         scheduleReconnect();
                         netState.nextRetryAt = 0; // no need to wait, we KNOW it's dead
                     }
@@ -1574,7 +1585,8 @@
                 // Deliberate close from the host, not a dropped connection — the reconnect
                 // watchdog must NOT keep trying to rebuild this, or the player would be stuck
                 // silently retrying against a room that no longer exists.
-                teardownNetwork();
+                leaveMatch();
+                closeWinModal();
                 clientView = null;
                 showToast(msg.message || 'The host ended the match.', 'error');
                 showScreen('mode-screen');
@@ -1597,20 +1609,27 @@
                 document.getElementById('join-lobby-players').innerHTML =
                     msg.players.map((n, i) => lobbyRowHtml(i, n + (i === netState.myIndex ? ' (You)' : ''))).join('');
             } else if (msg.t === 'state') {
-                const firstTime = !clientView || !clientView.gameStarted;
-                const prevRound = clientView ? clientView.roundNumber : null;
+                const prev = clientView;
+                const firstTime = !prev;
                 clientView = msg.view;
-                clientSelectedTileIds.clear();
 
-                if (firstTime && clientView.gameStarted) {
-                    showScreen('game-screen');
-                    // Establish a baseline so joining mid-game doesn't immediately play a sound
-                    // for something that already happened before this device connected.
-                    netState.lastPlayedActionSoundSeq = clientView.lastActionSound ? clientView.lastActionSound.seq : 0;
+                // A new turn drops the selection; a mere refresh keeps whatever is still in the rack
+                if (!prev || prev.turnSeq !== clientView.turnSeq) {
+                    clientSelectedTileIds.clear();
+                } else {
+                    const inRack = new Set(clientView.myRack.map(t => t.id));
+                    [...clientSelectedTileIds].forEach(id => { if (!inRack.has(id)) clientSelectedTileIds.delete(id); });
                 }
 
-                // Host started a new round: clear any lingering win results / pill from the last one
-                if (prevRound !== null && clientView.roundNumber !== prevRound) {
+                if (firstTime) {
+                    showScreen('game-screen');
+                    // Baselines, so joining mid-game doesn't replay a sound or a win from before this device connected
+                    netState.lastPlayedActionSoundSeq = clientView.lastActionSound ? clientView.lastActionSound.seq : 0;
+                    if (clientView.gameStarted) netState.lastShownWinSeq = clientView.winner ? clientView.winner.seq : 0;
+                }
+
+                // Host started a new round (or restarted this one): clear the last result
+                if (prev && !prev.gameStarted && clientView.gameStarted) {
                     closeWinModal();
                 }
 
@@ -1640,7 +1659,7 @@
         }
 
         function sendAction(payload) {
-            const msg = Object.assign({ t: 'action' }, payload);
+            const msg = Object.assign({ t: 'action', turn: clientView ? clientView.turnSeq : undefined }, payload);
             if (safeSend(getHostConn(), msg)) return;
             // Disconnected: queue it (small cap — old moves are usually stale anyway) and let
             // the reconnect flush send it. The host validates everything, so no harm done if
@@ -1685,11 +1704,11 @@
         }
 
         function getNewlyPlacedTileIds() {
-            return netState.mode === 'client' ? (clientView ? clientView.newlyPlacedTileIds : []) : gameState.newlyPlacedTileIds;
+            return getViewField('newlyPlacedTileIds', []);
         }
 
         function getPulledFromTableIds() {
-            return netState.mode === 'client' ? (clientView ? clientView.pulledFromTableIds : []) : gameState.pulledFromTableIds;
+            return getViewField('pulledFromTableIds', []);
         }
 
         // The viewer's own rack and initial-meld status, whatever the mode (clients read the
@@ -1704,6 +1723,11 @@
             return me ? { rack: me.rack, hasInitial: me.hasInitial } : null;
         }
 
+        // What everyone may know about each player (never their tiles)
+        function publicPlayers() {
+            return gameState.players.map(p => ({ name: p.name, rackCount: p.rack.length, hasInitial: p.hasInitial, isBot: !!p.isBot }));
+        }
+
         // The part of the state view that is identical for every client; buildViewFor adds
         // the per-seat fields on top, so a broadcast builds the shared part only once.
         function buildSharedView() {
@@ -1712,7 +1736,7 @@
                 tableMelds: gameState.tableMelds,
                 poolCount: gameState.pool.length,
                 currentPlayerIndex: gameState.currentPlayerIndex,
-                players: gameState.players.map(p => ({ name: p.name, rackCount: p.rack.length, hasInitial: p.hasInitial })),
+                players: publicPlayers(),
                 initialPointsThisTurn: gameState.initialPointsThisTurn,
                 playedThisTurn: gameState.playedThisTurn,
                 playedTileFromRackThisTurn: gameState.playedTileFromRackThisTurn,
@@ -1720,7 +1744,9 @@
                 newlyPlacedTileIds: gameState.newlyPlacedTileIds,
                 oneTileWarning: gameState.oneTileWarning,
                 lastActionSound: gameState.lastActionSound,
+                turnSeq: gameState.turnSeq,
                 cumulativeScores: gameState.cumulativeScores,
+                matchHistory: gameState.matchHistory,
                 turnMoves: gameState.turnMoves,
                 lastTurn: gameState.lastTurn,
                 turnLog: gameState.turnLog,
@@ -1869,7 +1895,7 @@
         }
 
         function canFormRun(tiles) {
-            if (!tiles || tiles.length < 3) return false;
+            if (!tiles || tiles.length < 3 || tiles.length > 13) return false;
             
             const nonJokers = getNonJokerTiles(tiles);
             const jokersCount = tiles.length - nonJokers.length;
@@ -1925,9 +1951,12 @@
         // table intact if the turn ends short. Merging one into an older, already-settled meld
         // would mean reverting it later rips out tiles that were never part of this turn's play.
         // They become eligible for merging again as soon as the turn resolves either way.
-        function autoMergeMelds() {
+        function autoMergeMelds(includeThisTurn = false) {
             let mergedThisPass = true;
             const pendingIds = new Set(gameState.turnMeldIds);
+            // Sets touched this turn are left alone mid-turn: a tile dragged to empty space to start
+            // a new set would otherwise snap straight back into the run it came from.
+            const touched = new Set(includeThisTurn ? [] : gameState.newlyPlacedTileIds);
 
             while (mergedThisPass) {
                 mergedThisPass = false;
@@ -1937,6 +1966,7 @@
                         const meldA = gameState.tableMelds[i];
                         const meldB = gameState.tableMelds[j];
                         if (pendingIds.has(meldA.id) || pendingIds.has(meldB.id)) continue;
+                        if (meldA.tiles.some(t => touched.has(t.id)) || meldB.tiles.some(t => touched.has(t.id))) continue;
                         if (meldA.tiles.length + meldB.tiles.length > 13) continue; // longer than any legal run
 
                         const combined = [...meldA.tiles, ...meldB.tiles];
@@ -1972,40 +2002,47 @@
         function startTimerLoopIfNeeded() {
             if (turnTimerLoop) return;
             if (!getActiveTurnDeadline()) { updateTurnTimerDisplay(); return; }
-            turnTimerLoop = setInterval(() => {
-                const deadline = getActiveTurnDeadline();
-                if (!deadline) { stopTimerLoop(); updateTurnTimerDisplay(); return; }
+            const tick = () => {
+                turnTimerLoop = null;
+                let deadline = getActiveTurnDeadline();
+                if (!deadline) { updateTurnTimerDisplay(); return; }
                 updateTurnTimerDisplay();
                 if (netState.mode !== 'client' && Date.now() >= deadline) {
                     handleTurnTimeout();
+                    deadline = getActiveTurnDeadline(); // the next turn's clock, if any
+                    if (!deadline) { updateTurnTimerDisplay(); return; }
                 }
-            }, 500);
+                // Wake just after the next whole second boundary — the display only changes then
+                const untilNextSecond = ((deadline - Date.now()) % 1000 + 1000) % 1000 || 1000;
+                turnTimerLoop = setTimeout(tick, Math.min(untilNextSecond + 20, 1000));
+            };
+            turnTimerLoop = setTimeout(tick, 0);
         }
 
         function stopTimerLoop() {
-            if (turnTimerLoop) { clearInterval(turnTimerLoop); turnTimerLoop = null; }
+            if (turnTimerLoop) { clearTimeout(turnTimerLoop); turnTimerLoop = null; }
         }
 
         function startTurnTimer() {
-            gameState.turnDeadline = gameState.turnTimerSeconds > 0
+            const current = getCurrentPlayer();
+            gameState.turnDeadline = gameState.turnTimerSeconds > 0 && current && !current.isBot
                 ? Date.now() + gameState.turnTimerSeconds * 1000
-                : null;
+                : null; // the clock is for people
             lastTickRemaining = null; // fresh countdown, no stale tick state carried over
             lastRenderedRemaining = null;
             startTimerLoopIfNeeded();
         }
 
         function getActiveTurnDeadline() {
-            return netState.mode === 'client' ? (clientView ? clientView.turnDeadline : null) : gameState.turnDeadline;
+            return getViewField('turnDeadline', null);
         }
 
         function getActiveTurnTimerTotal() {
-            const total = netState.mode === 'client' ? (clientView ? clientView.turnTimerSeconds : 0) : gameState.turnTimerSeconds;
-            return total || 30; // guard against 0/undefined causing a divide-by-zero in the progress calc
+            return getViewField('turnTimerSeconds', 0) || 30; // never divide by zero in the ring
         }
 
         function isGameActiveForDisplay() {
-            return netState.mode === 'client' ? !!(clientView && clientView.gameStarted) : gameState.gameStarted;
+            return !!getViewField('gameStarted', false);
         }
 
         function updateTurnTimerDisplay() {
@@ -2063,33 +2100,30 @@
             if (!currentPlayer) return;
 
             gameState.turnDeadline = null; // stop re-firing while we handle this one
-            const timedOutIndex = gameState.currentPlayerIndex; // route the message to whoever actually timed out
-
-            // Case 1: they made a real play (or already drew) and never tapped End Turn — keep it
-            // and just pass. Table rearrangement alone doesn't qualify: it isn't a move, so it
-            // falls through to the reset-and-draw branch below, same as doing nothing.
-            if ((gameState.playedTileFromRackThisTurn || gameState.hasDrawnThisTurn) && isBoardFullyValid()) {
-                reportActionError("⏱️ Time's up! Your play was kept and the turn passed automatically.", timedOutIndex);
+            actingPlayerIndex = gameState.currentPlayerIndex; // every message goes to whoever actually timed out
+            try {
                 logTurn(`Time ran out for ${currentPlayer.name}`);
-                endTurn(true);
-                return;
-            }
+                const { played, keeping } = judgeTurn(currentPlayer);
 
-            // Case 2: nothing (valid) done — reset any half-finished manipulation back to how
-            // the turn started, draw one tile, and pass to the next player.
-            const snap = gameState.turnSnapshot;
-            if (snap && snap.playerIndex === gameState.currentPlayerIndex) {
-                restoreFromSnapshot(snap);
-            }
-            reportActionError("⏱️ Time's up! A tile was drawn for you and the turn passed.", timedOutIndex);
-            logTurn(`Time ran out for ${currentPlayer.name}`);
+                // Case 1: a real play (or a draw) with a legal table, and they never tapped End
+                // Turn — keep it and just pass. A stolen joker still in hand goes back via endTurn.
+                if ((played || gameState.hasDrawnThisTurn) && !keeping.length && isBoardFullyValid()) {
+                    reportActionError("⏱️ Time's up! Your play was kept and the turn passed automatically.");
+                    endTurn(true);
+                    return;
+                }
 
-            if (gameState.pool.length > 0) {
-                drawTile(); // draws one tile and automatically ends the turn
-            } else {
-                // Pool exhausted: drawTile() would silently no-op and strand the turn forever.
-                // endTurn() handles this correctly — counts it toward the stalemate ending.
-                endTurn(true);
+                // Case 2: nothing (valid) done — put the board back how the turn started, draw one
+                // tile, and pass to the next player.
+                restoreTurnStart();
+                reportActionError("⏱️ Time's up! A tile was drawn for you and the turn passed.");
+                if (gameState.pool.length > 0) {
+                    drawTile(); // draws one tile and automatically ends the turn
+                } else {
+                    endTurn(true); // nothing to draw: the pass counts toward the stalemate ending
+                }
+            } finally {
+                actingPlayerIndex = null;
             }
         }
 
@@ -2110,19 +2144,8 @@
 
         // Check if player can steal/replace this joker with one of their tiles
         function canStealJoker(meldTiles, jokerTile, playerRack) {
-            if (!jokerTile.isJoker) return false;
-            
-            for (let replacement of playerRack) {
-                if (replacement.isJoker) continue;
-                
-                const withoutJoker = meldTiles.filter(t => t.id !== jokerTile.id);
-                const testMeld = [...withoutJoker, replacement];
-                
-                if (isValidMeld(testMeld)) {
-                    return replacement;
-                }
-            }
-            return null;
+            const withoutJoker = meldTiles.filter(t => t.id !== jokerTile.id);
+            return playerRack.find(r => !r.isJoker && isValidMeld([...withoutJoker, r])) || null;
         }
 
         // Client devices don't run the rules: on their own turn the action is sent to the host
@@ -2192,6 +2215,13 @@
             return tile;
         }
 
+        // Table melds can't be touched until the player's own initial meld is on the table
+        function requireInitialMeld(player, verb) {
+            if (player.hasInitial) return true;
+            reportActionError(`Make your own initial meld (30+ points) before ${verb}.`);
+            return false;
+        }
+
         // Perform joker steal
         function stealJoker(meldId, jokerId) {
             if (forwardIfClient({ action: 'stealJoker', meldId, jokerId })) return;
@@ -2199,8 +2229,10 @@
             const currentPlayer = getCurrentPlayer();
             if (!currentPlayer) return;
 
-            if (!currentPlayer.hasInitial) {
-                reportActionError('Make your own initial meld (30+ points) before manipulating melds on the table.');
+            if (!requireInitialMeld(currentPlayer, 'manipulating melds on the table')) return;
+
+            if (gameState.pendingJokerRetrieval) {
+                reportActionError('Play the joker you already took before taking another.');
                 return;
             }
 
@@ -2247,24 +2279,6 @@
             finishAction('joker');
         }
 
-        // If a retrieved joker never got replayed into a set this turn, put everything back the
-        // way it was — the retrieval itself is invalid per the official rules.
-        function revertPendingJokerRetrieval(player) {
-            const pending = gameState.pendingJokerRetrieval;
-            if (!pending) return false;
-
-            const meld = gameState.tableMelds.find(m => m.id === pending.meldId);
-            if (meld) {
-                meld.tiles = pending.originalMeldTiles;
-            }
-            player.rack = player.rack.filter(t => t.id !== pending.jokerTile.id);
-            player.rack.push(pending.replacementTile);
-            player.rack = sortTiles(player.rack);
-
-            gameState.pendingJokerRetrieval = null;
-            return true;
-        }
-
         // Called whenever tiles get successfully played from the rack — clears the pending-joker
         // tracker if the retrieved joker was among them (i.e. it was legally replayed in time).
         function clearPendingJokerIfPlayed(playedTileIds) {
@@ -2278,10 +2292,7 @@
         // immediately here; networked clients pick it up via oneTileWarning in the state view.
         function checkOneTileWarning(player) {
             if (player.rack.length !== 1) return;
-            gameState.oneTileWarning = {
-                seq: (gameState.oneTileWarning ? gameState.oneTileWarning.seq : 0) + 1,
-                playerName: player.name
-            };
+            gameState.oneTileWarning = { seq: nextSeq(gameState.oneTileWarning), playerName: player.name };
             showToast(`⚠️ ${player.name} has only ONE tile left!`, 'warning');
             playSound('oneTile');
         }
@@ -2315,14 +2326,12 @@
                 };
                 el.oncontextmenu = e => e.preventDefault(); // no native long-press menu on tiles
             } else {
-                // Table tiles have no tap action by default (joker-steal below overrides this per-tile)
-                el.style.cursor = 'default';
-                el.onclick = null;
+                el.style.cursor = 'default'; // table tiles have no tap action (joker steal overrides per tile)
             }
 
             // Selected state
             if (getSelectedIds().has(tile.id) && isInRack) {
-                el.classList.add('selected', 'ring-4', 'ring-yellow-400');
+                el.classList.add('selected');
             }
 
             // Highlight the tile just drawn from the pool, for the rest of this turn
@@ -2341,6 +2350,12 @@
         // ==================== DRAG AND DROP (Pointer Events — works reliably on iPad touch,
         // unlike the native HTML5 Drag and Drop API which iOS Safari only partially supports) ====================
         let dragState = null; // { sourceType, tile, meldId, tileEl, ghostEl, startX, startY, offsetX, offsetY, width, height, dragging, lastTarget }
+
+        // Dragging a selected rack tile drags the whole selection; an unselected one drags alone
+        function draggedRackIds(tileId) {
+            const sel = getSelectedIds();
+            return (sel.has(tileId) && sel.size > 1) ? new Set(sel) : new Set([tileId]);
+        }
 
         function canDragFromTable() {
             if (!isMyTurn()) return false;
@@ -2370,7 +2385,6 @@
                 dragging: false,
                 ghostEl: null,
                 lastTarget: null,
-                pointerId: e.pointerId,
             };
             if (tileEl.setPointerCapture) {
                 try { tileEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
@@ -2391,12 +2405,25 @@
             }
             e.preventDefault();
 
-            if (dragState.ghostEl) {
-                dragState.ghostEl.style.left = (e.clientX - dragState.offsetX) + 'px';
-                dragState.ghostEl.style.top = (e.clientY - dragState.offsetY) + 'px';
-            }
+            // Touch and pencil input can arrive several times per frame: move the ghost and hit-test
+            // once per frame with the latest position
+            dragState.lastX = e.clientX;
+            dragState.lastY = e.clientY;
+            if (dragFrame) return;
+            dragFrame = requestAnimationFrame(() => {
+                dragFrame = null;
+                if (!dragState) return;
+                positionGhost(dragState.lastX, dragState.lastY);
+                updateHoverTarget(dragState.lastX, dragState.lastY);
+            });
+        }
 
-            updateHoverTarget(e.clientX, e.clientY);
+        let dragFrame = null;
+
+        // The ghost is placed with a transform only, so it never triggers layout
+        function positionGhost(x, y) {
+            if (!dragState || !dragState.ghostEl) return;
+            dragState.ghostEl.style.transform = `translate3d(${x - dragState.offsetX}px, ${y - dragState.offsetY}px, 0) scale(1.08) rotate(-2deg)`;
         }
 
         function beginDragVisual() {
@@ -2404,21 +2431,21 @@
             dragState.tileEl.classList.add('dragging-source');
 
             const ghost = dragState.tileEl.cloneNode(true);
-            ghost.removeAttribute('id');
             ghost.className = dragState.tileEl.className.replace('dragging-source', '') + ' drag-ghost';
             ghost.style.width = dragState.width + 'px';
             ghost.style.height = dragState.height + 'px';
-            ghost.style.left = (dragState.startX - dragState.offsetX) + 'px';
-            ghost.style.top = (dragState.startY - dragState.offsetY) + 'px';
+            ghost.style.left = '0';
+            ghost.style.top = '0';
             document.body.appendChild(ghost);
             dragState.ghostEl = ghost;
+            positionGhost(dragState.startX, dragState.startY);
             markDropTargets();
         }
 
         // Lights up the melds that would accept the dragged tile(s) as a valid set (or a valid
         // split) and dims the rest, so a drop never has to be guessed.
         function markDropTargets() {
-            const melds = netState.mode === 'client' ? (clientView ? clientView.tableMelds : []) : gameState.tableMelds;
+            const melds = getViewField('tableMelds', []);
             const me = getMyRackInfo();
             let moving;
             if (dragState.sourceType === 'rack') {
@@ -2426,8 +2453,7 @@
                     document.querySelectorAll('#table-area .meld-card').forEach(card => card.classList.add('drop-no'));
                     return;
                 }
-                const sel = getSelectedIds();
-                const ids = (sel.has(dragState.tile.id) && sel.size > 1) ? sel : new Set([dragState.tile.id]);
+                const ids = draggedRackIds(dragState.tile.id);
                 moving = me.rack.filter(t => ids.has(t.id));
             } else {
                 moving = [dragState.tile];
@@ -2490,6 +2516,7 @@
 
         function cleanupDrag() {
             if (!dragState) return;
+            if (dragFrame) { cancelAnimationFrame(dragFrame); dragFrame = null; }
             if (dragState.tileEl) {
                 dragState.tileEl.classList.remove('dragging-source');
                 dragState.tileEl.removeEventListener('pointermove', onDragPointerMove);
@@ -2512,10 +2539,10 @@
         function dispatchTileDrop(sourceType, tile, fromMeldId, target) {
             if (sourceType === 'rack') {
                 const sel = getSelectedIds();
-                const payloadIds = (sel.has(tile.id) && sel.size > 1) ? [...sel] : [tile.id];
+                const payloadIds = [...draggedRackIds(tile.id)];
                 sel.clear();
                 payloadIds.forEach(id => sel.add(id));
-                renderRack();
+                if (target.type === 'rack') renderRack(); // otherwise the action's own render follows
 
                 if (target.type === 'newmeld') {
                     laySelectedAsMeld();
@@ -2534,9 +2561,22 @@
         // Every way of dealing the tiles into two piles is tried (tile 0 always in the first pile,
         // so each partition is seen once). Slicing a sorted list would miss splits where the two
         // runs share values, e.g. 3,4,5,6,7,8 + 4,5 → 3,4,5 and 4,5,6,7,8.
+        // Two sets are each a run (one colour) or a group (one number). So a split needs: at most
+        // two colours among the real tiles (run + run), at most two numbers (group + group), or
+        // everything except one number's tiles in a single colour (run + group). Anything else can
+        // be rejected without the search below.
+        function couldSplit(tiles) {
+            const real = tiles.filter(t => !t.isJoker);
+            const colours = new Set(real.map(t => t.color));
+            const values = new Set(real.map(t => t.value));
+            if (colours.size <= 2 || values.size <= 2) return true;
+            return [...values].some(v => new Set(real.filter(t => t.value !== v).map(t => t.color)).size <= 1);
+        }
+
         function trySplitMeld(tiles) {
             const n = tiles.length;
             if (n < 6 || n > 16) return null; // need at least 3 + 3; beyond 16 the search is too big
+            if (!couldSplit(tiles)) return null;
             for (let mask = 1; mask < (1 << (n - 1)); mask++) {
                 const left = [tiles[0]], right = [];
                 for (let i = 1; i < n; i++) ((mask >> (i - 1)) & 1 ? left : right).push(tiles[i]);
@@ -2554,10 +2594,7 @@
             const currentPlayer = getCurrentPlayer();
             if (!currentPlayer) return;
 
-            if (!currentPlayer.hasInitial) {
-                reportActionError('Make your own initial meld (30+ points) before manipulating melds on the table.');
-                return;
-            }
+            if (!requireInitialMeld(currentPlayer, 'manipulating melds on the table')) return;
 
             if (target.type === 'meld' && target.meldId === fromMeldId) return; // dropped on its own meld — no-op
 
@@ -2568,6 +2605,8 @@
             if (!tile) return;
 
             const remaining = fromMeld.tiles.filter(t => t.id !== tileId);
+            if (target.type === 'meld' && !gameState.tableMelds.some(m => m.id === target.meldId)) return; // stale target
+            if (!['meld', 'rack', 'newmeld'].includes(target.type)) return;
 
             // Remember where the tile came from (its first origin this turn) for the ghost marker
             if (!gameState.turnMoves.some(m => m.tileId === tile.id)) {
@@ -2605,8 +2644,7 @@
                 if (!toMeld) return;
                 destReplacement = [[...toMeld.tiles, tile]];
             } else if (target.type === 'rack') {
-                currentPlayer.rack.push(tile);
-                currentPlayer.rack = sortTiles(currentPlayer.rack);
+                currentPlayer.rack.push(tile); // racks are always rendered sorted
                 gameState.pulledFromTableIds.push(tile.id);
             } else if (target.type === 'newmeld') {
                 // Starts a new (possibly still-incomplete) meld — fine, it just needs to be a
@@ -2669,7 +2707,7 @@
             if (sortedRack.length === 0) {
                 const empty = document.createElement('div');
                 empty.className = 'text-center text-black/40 italic w-full py-3 text-sm';
-                empty.textContent = 'Rack is empty — you won!';
+                empty.textContent = 'Rack is empty';
                 container.appendChild(empty);
                 return;
             }
@@ -2768,8 +2806,7 @@
         function renderTable() {
             const container = document.getElementById('table-area');
             const noMeldsMsg = document.getElementById('no-melds-message');
-            const meldsRaw = netState.mode === 'client' ? (clientView ? clientView.tableMelds : []) : gameState.tableMelds;
-            const melds = sortMeldsForBoard(meldsRaw);
+            const melds = sortMeldsForBoard(getViewField('tableMelds', []));
 
             // Clear previous melds and section dividers
             container.querySelectorAll('.meld-card, .meld-section-divider').forEach(el => el.remove());
@@ -2786,7 +2823,7 @@
             // (if any) they're currently allowed to steal.
             const me = getMyRackInfo();
             const myRackForSteal = me ? me.rack : [];
-            const canStealRightNow = isMyTurn() && !!(me && me.hasInitial);
+            const canStealRightNow = canDragFromTable();
             const newlyPlacedIds = new Set(getNewlyPlacedTileIds());
 
             // Ghost markers: where moved tiles sat at the start of this turn, plus the previous
@@ -2876,11 +2913,10 @@
         function renderAll() {
             if (netState.mode !== 'client') {
                 autoMergeMelds();
-                // Once the board is valid again, whatever was pulled out has been legitimately
-                // resolved (whether it went back exactly, or got used differently) — no more
-                // "owed back" warning needed.
-                if (gameState.pulledFromTableIds.length && isBoardFullyValid()) {
-                    gameState.pulledFromTableIds = [];
+                // The "owed back" warning lasts as long as the tile is still in the rack
+                if (gameState.pulledFromTableIds.length) {
+                    const rackIds = new Set(getCurrentPlayer().rack.map(t => t.id));
+                    gameState.pulledFromTableIds = gameState.pulledFromTableIds.filter(id => rackIds.has(id));
                 }
             }
 
@@ -2898,7 +2934,7 @@
         function renderPlayerStrip() {
             const isClient = netState.mode === 'client';
             if (isClient && !clientView) return;
-            const players = isClient ? clientView.players : gameState.players.map(p => ({ name: p.name, rackCount: p.rack.length, hasInitial: p.hasInitial }));
+            const players = isClient ? clientView.players : publicPlayers();
             const current = getViewField('currentPlayerIndex', 0);
             const scores = getViewField('cumulativeScores', {});
             const initialProgress = getViewField('initialPointsThisTurn', 0);
@@ -2927,19 +2963,23 @@
 
         function showTurnLog() {
             const log = getViewField('turnLog', []);
-            const rows = log.length
+            showListModal('Turn log', log.length
                 ? [...log].reverse().map(e => `<div class="px-4 py-2 rounded-2xl bg-black/5">${escapeHtml(e.text)}</div>`).join('')
-                : '<div class="text-black/50 px-4 py-2">Nothing has happened yet.</div>';
+                : '<div class="text-black/50 px-4 py-2">Nothing has happened yet.</div>');
+        }
+
+        // A simple scrollable list in a modal; tapping the backdrop or × closes it
+        function showListModal(title, rowsHtml) {
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-black/80 z-[90] flex items-center justify-center p-6';
             modal.onclick = e => { if (e.target === modal) modal.remove(); };
             modal.innerHTML = `
                 <div class="bg-white w-full max-w-sm rounded-3xl p-6 border border-black/10">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">Turn log</h3>
+                        <h3 class="text-lg font-semibold">${escapeHtml(title)}</h3>
                         <button onclick="this.closest('.fixed').remove()" class="text-2xl text-black/60 hover:text-black">×</button>
                     </div>
-                    <div class="text-sm space-y-2 max-h-[60vh] overflow-y-auto">${rows}</div>
+                    <div class="text-sm space-y-2 max-h-[60vh] overflow-y-auto">${rowsHtml}</div>
                 </div>`;
             document.body.appendChild(modal);
         }
@@ -2948,21 +2988,12 @@
             const hasSelection = getSelectedIds().size > 0;
             const myTurn = isMyTurn();
 
-            let hasDrawn, poolCount, playedThisTurn, hasPendingJoker, playedFromRack;
-            if (netState.mode === 'client') {
-                if (!clientView) return;
-                hasDrawn = clientView.hasDrawnThisTurn;
-                poolCount = clientView.poolCount;
-                playedThisTurn = clientView.playedThisTurn;
-                hasPendingJoker = !!clientView.hasPendingJokerRetrieval;
-                playedFromRack = !!clientView.playedTileFromRackThisTurn;
-            } else {
-                hasDrawn = gameState.hasDrawnThisTurn;
-                poolCount = gameState.pool.length;
-                playedThisTurn = gameState.playedThisTurn;
-                hasPendingJoker = !!gameState.pendingJokerRetrieval;
-                playedFromRack = !!gameState.playedTileFromRackThisTurn;
-            }
+            if (netState.mode === 'client' && !clientView) return;
+            const hasDrawn = !!getViewField('hasDrawnThisTurn', false);
+            const poolCount = getViewField('poolCount', gameState.pool.length);
+            const playedThisTurn = !!getViewField('playedThisTurn', false);
+            const playedFromRack = !!getViewField('playedTileFromRackThisTurn', false);
+            const hasPendingJoker = netState.mode === 'client' ? !!clientView.hasPendingJokerRetrieval : !!gameState.pendingJokerRetrieval;
 
             // If you have already drawn this turn, you cannot play any more tiles
             document.getElementById('btn-lay-meld').disabled = !myTurn || hasDrawn || !hasSelection;
@@ -3022,16 +3053,12 @@
             return audioCtx;
         }
 
-        // Called whenever the app might have lost its audio session — on returning to the
-        // foreground, on regaining network, and on any tap. Resuming outside a user gesture is
-        // unreliable on iOS, so the tap path also re-primes with a real (silent) scheduled tone,
-        // which is what actually reopens the audio session.
-        function ensureAudioAlive(fromUserGesture) {
+        // Called whenever the app might have lost its audio session (returning to the foreground,
+        // regaining network). Taps go through unlockAudioOnFirstInteraction, which primes a real
+        // tone — the only thing that reliably reopens the session on iOS.
+        function ensureAudioAlive() {
             const ctx = getAudioContext();
-            if (!ctx) return;
-            if (ctx.state === 'running') return;
-            ctx.resume().catch(() => {});
-            if (fromUserGesture) primeAudio(ctx);
+            if (ctx && ctx.state !== 'running') ctx.resume().catch(() => {});
         }
 
         function primeAudio(ctx) {
@@ -3052,7 +3079,7 @@
         // needs an actual sound scheduled during the gesture itself, not just context.resume().
         // This runs once on the very first tap/click anywhere on the page, well before any game
         // sound is needed, so by the time one actually plays the context is already running.
-        function unlockAudioOnFirstInteraction() {
+        function unlockAudioOnInteraction() {
             const ctx = getAudioContext();
             if (!ctx) return;
             if (ctx.state === 'running' && audioUnlocked) return;
@@ -3062,9 +3089,9 @@
         // backgrounding or an OS interruption, and only a real user gesture can reliably bring
         // it back. Keeping these listeners alive means the very next tap silently repairs audio.
         ['pointerdown', 'touchstart', 'click'].forEach(evt => {
-            document.addEventListener(evt, unlockAudioOnFirstInteraction, { capture: true, passive: true });
+            document.addEventListener(evt, unlockAudioOnInteraction, { capture: true, passive: true });
         });
-        window.addEventListener('focus', () => ensureAudioAlive(false)); // visibility/online resume is wired up in init()
+        window.addEventListener('focus', ensureAudioAlive); // visibility/online resume is wired up in init()
 
         let soundEnabled = storageGet('rummikubSound') !== 'false';
         function isSoundEnabled() {
@@ -3118,8 +3145,7 @@
         // Only meaningful in networked play; solo mode already hears everything locally.
         function broadcastActionSound(name) {
             if (netState.mode === 'solo') return;
-            const seq = (gameState.lastActionSound ? gameState.lastActionSound.seq : 0) + 1;
-            gameState.lastActionSound = { seq, sound: name };
+            gameState.lastActionSound = { seq: nextSeq(gameState.lastActionSound), sound: name };
         }
 
         function playSound(name, param) {
@@ -3190,9 +3216,6 @@
                     }
                     break;
                 }
-                case 'move': // generic/test tone
-                    playTone(600, 0, 0.08, 'sine', 0.10);
-                    break;
                 default:
                     playTone(500, 0, 0.08, 'sine', 0.08);
             }
@@ -3241,10 +3264,10 @@
             const selected = getSelectedIds();
             if (selected.has(tileId)) {
                 selected.delete(tileId);
-                tileElement.classList.remove('selected', 'ring-4', 'ring-yellow-400', 'valid-preview', 'invalid-preview');
+                tileElement.classList.remove('selected', 'valid-preview', 'invalid-preview');
             } else {
                 selected.add(tileId);
-                tileElement.classList.add('selected', 'ring-4', 'ring-yellow-400');
+                tileElement.classList.add('selected');
             }
             
             // Live preview feedback
@@ -3306,7 +3329,6 @@
             commitRackPlay(currentPlayer, selected, remaining);
             if (resolveRackAfterPlay(currentPlayer)) return;
 
-            autoSortCurrentRack();
             finishAction('place');
         }
 
@@ -3317,11 +3339,7 @@
             const currentPlayer = getCurrentPlayer();
             if (!currentPlayer || gameState.selectedTileIds.size === 0) return;
 
-            // You can't touch melds already on the table until your own initial meld is done
-            if (!currentPlayer.hasInitial) {
-                reportActionError('Make your own initial meld (30+ points) before adding to melds on the table.');
-                return;
-            }
+            if (!requireInitialMeld(currentPlayer, 'adding to melds on the table')) return;
 
             const meldIndex = gameState.tableMelds.findIndex(m => m.id === meldId);
             if (meldIndex === -1) return;
@@ -3353,19 +3371,16 @@
         }
 
         function drawTile() {
-            if (forwardIfClient({ action: 'draw' }, !!clientView && clientView.poolCount > 0)) return;
+            if (forwardIfClient({ action: 'draw' }, getViewField('poolCount', 0) > 0)) return;
 
             const currentPlayer = getCurrentPlayer();
             if (!currentPlayer || gameState.pool.length === 0) return;
+            if (gameState.hasDrawnThisTurn || judgeTurn(currentPlayer).played) return; // the buttons stop this; a stale action must too
 
             // Drawing means no play was made, so any table manipulation done this turn was never
             // legitimised — put the board back exactly as the turn started before taking the tile.
-            if (!gameState.playedTileFromRackThisTurn && gameState.playedThisTurn) {
-                const snap = gameState.turnSnapshot;
-                if (snap && snap.playerIndex === gameState.currentPlayerIndex) {
-                    restoreFromSnapshot(snap);
-                    showToast('Your table rearrangement was undone — you drew instead of playing.', 'warning');
-                }
+            if (gameState.playedThisTurn && restoreTurnStart()) {
+                reportActionError('Your table rearrangement was undone — you drew instead of playing.');
             }
 
             const drawnTile = drawFromPool(currentPlayer);
@@ -3377,12 +3392,12 @@
             // the auto-pass so they can still see what they got when their turn comes back.
             gameState.justDrawnTileIds[gameState.currentPlayerIndex] = drawnTile.id;
 
-            autoSortCurrentRack();
             gameState.selectedTileIds.clear();
-            finishAction('draw');
+            broadcastActionSound('draw');
+            playSound('draw');
 
             // Drawing always ends your turn — no further play is possible, so just pass
-            // straight to the next player instead of waiting for a separate End Turn tap.
+            // straight to the next player (endTurn renders and saves).
             endTurn();
         }
 
@@ -3404,7 +3419,6 @@
                 }
             });
             gameState.turnMeldIds = [];
-            player.rack = sortTiles(player.rack);
             return reverted;
         }
 
@@ -3421,6 +3435,7 @@
             gameState.pendingJokerRetrieval = null;
             gameState.jokerWarningGiven = false;
             gameState.turnMoves = [];
+            gameState.turnSeq += 1;
             gameState.selectedTileIds = new Set();
             clientSelectedTileIds.clear();
         }
@@ -3433,9 +3448,29 @@
             clearTimeout(lastTurnTimer);
             if (!gameState.lastTurn) return;
             lastTurnTimer = setTimeout(() => {
+                if (dragState) { lingerLastTurn(); return; } // never yank the rack out from under a drag
                 gameState.lastTurn = null;
                 renderAll();
             }, LAST_TURN_LINGER_MS);
+        }
+
+        // Halts the running game on this device: no more timeouts, computer moves, lingering
+        // highlights or delayed win reveals. State is left in place for whoever calls next
+        // (a new deal, a new game, or leaving).
+        function stopGame() {
+            gameState.gameStarted = false;
+            gameState.turnDeadline = null;
+            gameState.lastTurn = null;
+            gameState.turnSeq += 1; // any computer turn still in flight sees it is over
+            stopTimerLoop();
+            clearTimeout(botTurnTimer);
+            clearTimeout(winRevealTimer);
+            clearTimeout(lastTurnTimer);
+            setOverlay('pass-modal', false);
+        }
+
+        function cloneMelds(melds) {
+            return melds.map(m => ({ id: m.id, tiles: [...m.tiles] }));
         }
 
         // Captures the board/rack state at the moment a turn begins, so the active player can
@@ -3448,7 +3483,7 @@
                 playerIndex: gameState.currentPlayerIndex,
                 rack: [...player.rack],
                 hasInitial: player.hasInitial,
-                tableMelds: gameState.tableMelds.map(m => ({ id: m.id, tiles: [...m.tiles] })),
+                tableMelds: cloneMelds(gameState.tableMelds),
                 pool: [...gameState.pool]
             };
         }
@@ -3460,7 +3495,7 @@
             const player = gameState.players[snap.playerIndex];
             player.rack = [...snap.rack];
             player.hasInitial = snap.hasInitial;
-            gameState.tableMelds = snap.tableMelds.map(m => ({ id: m.id, tiles: [...m.tiles] }));
+            gameState.tableMelds = cloneMelds(snap.tableMelds);
             gameState.pool = [...snap.pool];
             delete gameState.justDrawnTileIds[snap.playerIndex];
             resetTurnState();
@@ -3497,16 +3532,29 @@
 
             // Official rule: a joker retrieved from the table must be replayed into a set this
             // same turn. The first End Turn with it still in hand is a warning and a chance to
-            // play it; only the second (or a timeout) undoes the whole retrieval.
+            // play it; the second (or a timeout) undoes the whole turn and draws instead.
             if (gameState.pendingJokerRetrieval) {
                 if (!force && !gameState.jokerWarningGiven) {
                     gameState.jokerWarningGiven = true;
-                    reportActionError("You still hold the joker you took from the table — play it into a set now. Tap End Turn again to give up and put it back where it was.");
+                    reportActionError("You still hold the joker you took from the table — play it into a set now. Tap End Turn again to give up: everything goes back and you draw a tile instead.");
                     return;
                 }
-                revertPendingJokerRetrieval(currentPlayer);
-                reportActionError("You didn't replay the joker you took — it's been put back where it was.");
-                logTurn(`${currentPlayer.name} didn't play the joker — it went back to its meld`);
+                restoreTurnStart();
+                const drawn = drawFromPool(currentPlayer);
+                if (drawn) gameState.justDrawnTileIds[gameState.currentPlayerIndex] = drawn.id;
+                gameState.hasDrawnThisTurn = true;
+                gameState.playedThisTurn = true;
+                reportActionError("You didn't replay the joker you took — the turn was undone and a tile drawn instead.");
+                logTurn(`${currentPlayer.name} didn't play the joker — the turn was undone, one tile drawn`);
+            }
+
+            // What actually happened this turn, judged against the rack at turn start: a real play
+            // is one of your own tiles now on the table; a table tile still sitting in your rack is
+            // never allowed to stay there.
+            const { played, keeping } = judgeTurn(currentPlayer);
+            if (keeping.length) {
+                reportActionError("You still hold a tile that came off the table — put it back on the board (or use Recall Turn).");
+                return;
             }
 
             // Core rule: a turn may only be passed after actually playing at least one tile from
@@ -3514,7 +3562,7 @@
             // service of a play — on its own it isn't a move, so it can't end the turn. Once the
             // pool is empty there is nothing to draw, so passing is allowed (see the stalemate
             // rule below).
-            if (!gameState.playedTileFromRackThisTurn && !gameState.hasDrawnThisTurn && gameState.pool.length > 0) {
+            if (!played && !gameState.hasDrawnThisTurn && gameState.pool.length > 0) {
                 const rearranged = gameState.playedThisTurn; // board touched, but nothing played
                 reportActionError(rearranged
                     ? "Rearranging the table isn't a move on its own — play a tile from your rack, or draw a tile (which undoes the rearrangement)."
@@ -3522,16 +3570,17 @@
                 return;
             }
 
+            autoMergeMelds(true); // sets touched this turn may combine with the rest now the turn is over
+
             // If they haven't made their initial meld yet, any melds placed this turn don't
-            // count on their own — return them to the rack and draw the penalty tile. Otherwise
-            // a turn with nothing played (only possible after a reverted joker steal) must draw.
+            // count on their own — return them to the rack and draw the penalty tile.
             if (!currentPlayer.hasInitial && revertTurnMelds(currentPlayer)) {
                 reportActionError(`Initial meld needs 30+ points (you had ${gameState.initialPointsThisTurn}) — those tiles were returned to your rack.`);
                 logTurn(`${currentPlayer.name} fell short of the 30-point initial meld — tiles returned, one drawn`);
                 gameState.initialPointsThisTurn = 0;
                 drawFromPool(currentPlayer);
-            } else if (!gameState.playedThisTurn) {
-                drawFromPool(currentPlayer);
+            } else if (!played && !gameState.hasDrawnThisTurn) {
+                drawFromPool(currentPlayer); // nothing to draw with an empty pool: a pure pass
             } else if (!gameState.hasDrawnThisTurn) {
                 logTurn(`${currentPlayer.name} ended the turn`);
             }
@@ -3544,7 +3593,7 @@
             // If the pool is empty and this player played nothing this turn, nobody's making
             // progress. Once every player in turn has had a chance and still can't move, the
             // round ends and whoever holds the lowest-value rack wins it (official rule).
-            if (!gameState.playedThisTurn && gameState.pool.length === 0) {
+            if (!played && gameState.pool.length === 0) {
                 gameState.consecutiveEmptyTurns += 1;
             } else {
                 gameState.consecutiveEmptyTurns = 0;
@@ -3569,19 +3618,15 @@
             playSound('turn');
             broadcastActionSound('turn');
 
+            clearTimeout(lastTurnTimer); // the previous linger must not wipe this turn's markers
             if (netState.mode === 'solo' && !nextPlayer.isBot && humanCount() > 1) {
-                // Show pass modal - physically hand the device to the next player. Timer doesn't
-                // start until they confirm they're ready (see confirmPassToNext).
-                gameState.turnDeadline = null;
-                document.getElementById('pass-to-name').textContent = nextPlayer.name;
-                setOverlay('pass-modal', true);
+                // Physically hand the device to the next player; the clock starts when they
+                // confirm they're ready (see confirmPassToNext).
+                showPassModal(nextPlayer);
             } else {
                 // Networked (own device each), a computer's turn, or a lone human vs computers:
                 // the turn just switches
-                startTurnTimer();
-                renderAll();
-                lingerLastTurn();
-                scheduleBotTurn();
+                beginTurn();
             }
 
             saveGameToLocalStorage();
@@ -3589,28 +3634,29 @@
 
         function confirmPassToNext() {
             setOverlay('pass-modal', false);
-            startTurnTimer();
-            renderAll();
-            lingerLastTurn(); // the next player gets to see what the previous one did
+            beginTurn(); // the next player gets to see what the previous one did
         }
 
-        // Silently re-sorts the acting player's rack in place (no re-render of its own —
-        // callers always follow up with renderAll()).
-        function autoSortCurrentRack() {
-            const player = getCurrentPlayer();
-            if (!player) return;
-            player.rack = sortTiles(player.rack);
+        // Compares the rack now with the rack at turn start. `played`: at least one of the
+        // player's own tiles is on the table. `keeping`: table tiles that are still in the rack
+        // (only the drawn tile may be new).
+        function judgeTurn(player) {
+            const snap = gameState.turnSnapshot;
+            if (!snap) return { played: gameState.playedTileFromRackThisTurn, keeping: [] };
+            const startRack = new Set(snap.rack.map(t => t.id));
+            const onTable = new Set(gameState.tableMelds.flatMap(m => m.tiles.map(t => t.id)));
+            const drawnId = gameState.justDrawnTileIds[gameState.currentPlayerIndex];
+            return {
+                played: [...startRack].some(id => onTable.has(id)),
+                keeping: player.rack.filter(t => !startRack.has(t.id) && t.id !== drawnId)
+            };
         }
 
-        function sortRack() {
-            if (netState.mode === 'client') {
-                renderRack(); // rack is always rendered in sorted order already
-                return;
-            }
-            const player = getMyPlayer();
-            if (!player) return;
-            player.rack = sortTiles(player.rack);
-            renderRack();
+        // Undoes everything done this turn (the snapshot is always the current player's)
+        function restoreTurnStart() {
+            if (!gameState.turnSnapshot) return false;
+            restoreFromSnapshot(gameState.turnSnapshot);
+            return true;
         }
 
         // ==================== COMPUTER PLAYER ====================
@@ -3631,19 +3677,19 @@
         function scheduleBotTurn() {
             clearTimeout(botTurnTimer);
             if (!isBotTurn()) return;
-            gameState.turnDeadline = null; // the clock is for people
-            updateTurnTimerDisplay();
-            botTurnTimer = setTimeout(playBotTurn, BOT_THINK_MS);
+            // A previous computer turn may still be winding down (it stops at its next check)
+            botTurnTimer = setTimeout(playBotTurn, botPlaying ? 300 : BOT_THINK_MS);
         }
 
         const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
         async function playBotTurn() {
-            if (!isBotTurn() || botPlaying) return;
+            if (!isBotTurn()) return;
+            if (botPlaying) { scheduleBotTurn(); return; }
             botPlaying = true;
             const bot = getCurrentPlayer();
-            const seat = gameState.currentPlayerIndex;
-            const stillMyTurn = () => gameState.gameStarted && gameState.currentPlayerIndex === seat && getCurrentPlayer() === bot;
+            const turn = gameState.turnSeq;
+            const stillMyTurn = () => gameState.gameStarted && gameState.turnSeq === turn && getCurrentPlayer() === bot;
             try {
                 let played = false;
 
@@ -3681,9 +3727,8 @@
                 }
 
                 if (!stillMyTurn()) return;
-                if (played) endTurn(true);
-                else if (gameState.pool.length > 0) drawTile();
-                else endTurn(true); // nothing to draw: passing counts toward the stalemate
+                if (!played && gameState.pool.length > 0) drawTile();
+                else endTurn(true); // a play, or nothing to draw: passing counts toward the stalemate
             } finally {
                 botPlaying = false;
             }
@@ -3769,7 +3814,7 @@
             updatePlayerNameInputs(count);
         }
 
-        const SOLO_NAME_DEFAULTS = ['You', 'Ann', 'Dewan', 'Charindie', 'Player 5', 'Player 6']; // Personal touch for user
+        const SOLO_NAME_DEFAULTS = ['You', 'Ann', 'Dewan', 'Charindie', 'Player 5', 'Player 6'];
         const BOT_NAMES = ['Claude', 'Grok', 'Gemini', 'Copilot', 'Siri', 'Alexa'];
         // First computer name not already taken by one of the given players
         function nextBotName(taken) {
@@ -3803,25 +3848,33 @@
         // Flips a setup seat between human and computer (seat 1 always stays human)
         function toggleBotSeat(i) {
             if (i === 0) { showToast('Seat 1 is you — add computers on the other seats.', 'info'); return; }
-            const input = document.getElementById(`player-name-${i}`);
-            const wasDefault = !input || input.value.trim() === '' ||
-                input.value.trim() === (SOLO_NAME_DEFAULTS[i] || `Player ${i + 1}`) || BOT_NAMES.includes(input.value.trim());
-            if (soloBotSeats.has(i)) soloBotSeats.delete(i); else soloBotSeats.add(i);
             const count = document.getElementById('player-name-inputs').children.length;
-            const keep = wasDefault ? null : input.value;
+            const isDefault = v => v === '' || v === (SOLO_NAME_DEFAULTS.find(n => n === v)) || /^Player \d+$/.test(v) || BOT_NAMES.includes(v);
+            // Names people typed on any seat survive the rebuild
+            const typed = new Map();
+            for (let k = 0; k < count; k++) {
+                const input = document.getElementById(`player-name-${k}`);
+                if (input && !isDefault(input.value.trim())) typed.set(k, input.value);
+            }
+            typed.delete(i);
+            if (soloBotSeats.has(i)) soloBotSeats.delete(i); else soloBotSeats.add(i);
             updatePlayerNameInputs(count);
-            if (keep !== null) document.getElementById(`player-name-${i}`).value = keep;
+            typed.forEach((v, k) => { document.getElementById(`player-name-${k}`).value = v; });
         }
 
         function startGame() {
             const activeBtn = document.querySelector('.player-count-btn.active');
             const numPlayers = activeBtn ? parseInt(activeBtn.dataset.count) : 2;
 
+            const names = [];
             gameState.players = Array.from({ length: numPlayers }, (_, i) => {
                 const input = document.getElementById(`player-name-${i}`);
                 const isBot = soloBotSeats.has(i);
-                return makePlayer(cleanName(input && input.value, isBot ? BOT_NAMES[0] : `Player ${i + 1}`), undefined, isBot);
+                const name = uniqueName(cleanName(input && input.value, isBot ? BOT_NAMES[0] : `Player ${i + 1}`), names);
+                names.push(name);
+                return makePlayer(name, undefined, isBot);
             });
+            stopGame();
             resetMatchTally();
             gameState.turnTimerSeconds = readTimerSetting('solo-timer-select');
             showScreen('game-screen');
@@ -3842,13 +3895,15 @@
         // board — then begins the first turn (snapshot, timer, render, save). Shared by solo
         // start, host start, next round and restart.
         function dealRound(startIndex) {
+            stopGame();
+            closeWinModal();
             gameState.currentPlayerIndex = startIndex;
             gameState.tableMelds = [];
             gameState.justDrawnTileIds = {};
             gameState.consecutiveEmptyTurns = 0;
             gameState.gameStarted = true;
-            gameState.lastTurn = null;
-            clearTimeout(winRevealTimer);
+            gameState.matchInProgress = true;
+            gameState.lastWinnerPayload = null; // a late joiner must not be shown the previous result
             resetTurnState();
 
             gameState.pool = shuffle(generateAllTiles(gameState.tileVariant));
@@ -3859,9 +3914,31 @@
             logTurn(`Round ${gameState.roundNumber} — ${gameState.players[startIndex].name} starts`);
 
             captureTurnSnapshot();
+            const starter = gameState.players[startIndex];
+            if (netState.mode === 'solo' && !starter.isBot && humanCount() > 1) {
+                // Pass & play: the device may be in the wrong hands for a random starter, so hand
+                // it over before their rack shows
+                renderAll();
+                showPassModal(starter);
+            } else {
+                beginTurn({ linger: false });
+            }
+            saveGameToLocalStorage();
+        }
+
+        // Puts the hand-over screen up; the clock starts when the next player confirms
+        function showPassModal(player) {
+            gameState.turnDeadline = null;
+            document.getElementById('pass-to-name').textContent = player.name;
+            setOverlay('pass-modal', true);
+        }
+
+        // Starts the current player's turn on this device: clock (people only), render, keep the
+        // previous turn's markers for a moment, and let a computer take over if it's theirs.
+        function beginTurn({ linger = true } = {}) {
             startTurnTimer();
             renderAll();
-            saveGameToLocalStorage();
+            if (linger) lingerLastTurn();
             scheduleBotTurn();
         }
 
@@ -3913,8 +3990,7 @@
 
             // Everyone sees the winning play on the board first; the score modal follows after a
             // moment. Clients get the winner payload only with that later broadcast.
-            const seq = (gameState.lastWinnerPayload ? gameState.lastWinnerPayload.seq : 0) + 1;
-            const payload = { seq, title, subtitle, scores };
+            const payload = { seq: nextSeq(gameState.lastWinnerPayload), title, subtitle, scores };
             renderAll();
             clearTimeout(winRevealTimer);
             winRevealTimer = setTimeout(() => {
@@ -3922,6 +3998,7 @@
                 playSound('win');
                 showWinFromPayload(payload);
                 renderAll(); // host: broadcasts the winner to every client
+                saveGameToLocalStorage(); // the round result survives a reload
             }, WIN_REVEAL_MS);
         }
         const WIN_REVEAL_MS = 2500;
@@ -3992,27 +4069,38 @@
         // dead connection that the reconnect watchdog would keep retrying forever.
         function endMatchFromWin() {
             if (netState.mode === 'client') return; // decision belongs to the host; button is hidden anyway
+            if (netState.mode === 'host' && !confirm('End the match for everyone? This closes the room.')) return;
+            closeWinModal();
+            leaveMatch();
+            showScreen('mode-screen');
+        }
 
-            if (netState.mode === 'host') {
-                if (!confirm('End the match for everyone? This closes the room.')) return;
+        // Ends whatever is running on this device: the game, its timers, the saved game and, for
+        // a host, the room (after the "match ended" message has had a moment to leave).
+        function leaveMatch() {
+            if (netState.mode === 'host' && netState.peer) {
                 broadcast({ t: 'matchEnded', message: 'The host ended the match.' });
+                const peer = netState.peer;
+                netState.peer = null; // teardownNetwork must not destroy it yet
+                setTimeout(() => { try { peer.destroy(); } catch (e) { /* already gone */ } }, 500);
             }
             teardownNetwork();
-
-            closeWinModal();
-            showScreen('mode-screen');
+            stopGame();
+            gameState.matchInProgress = false;
             clearSavedGame();
-            gameState.gameStarted = false;
         }
 
         function newGame() {
             hideGameMenu();
+            if (netState.mode === 'client') { showToast('Only the host can start a new game. Leave the room from the mode screen instead.', 'info'); return; }
+            if (netState.mode === 'host' && !confirm('Start a new game? This closes the room for everyone.')) return;
+            leaveMatch();
             showScreen('setup-screen');
-            clearSavedGame();
         }
 
         function resetCurrentGame() {
             hideGameMenu();
+            if (netState.mode === 'client') { showToast('Only the host can restart the game.', 'info'); return; }
             if (!confirm('Restart the current game with same players?')) return;
             closeWinModal();
             dealRound(pickStartingPlayer()); // re-deal with the same players
@@ -4021,139 +4109,72 @@
         // ==================== PERSISTENCE ====================
         // Solo and host games are saved after every action so a reload (or a crashed tab) can
         // pick up where it left off; a host also re-opens its room (see resumeHosting).
+        // Everything a reload needs. Tiles are plain objects, so the state serialises as is.
+        const PERSISTED_KEYS = [
+            'players', 'currentPlayerIndex', 'tableMelds', 'pool', 'gameStarted', 'matchInProgress',
+            'playedThisTurn', 'playedTileFromRackThisTurn', 'hasDrawnThisTurn', 'initialPointsThisTurn',
+            'turnMeldIds', 'newlyPlacedTileIds', 'pulledFromTableIds', 'justDrawnTileIds', 'turnMoves',
+            'pendingJokerRetrieval', 'jokerWarningGiven', 'consecutiveEmptyTurns', 'turnSnapshot',
+            'cumulativeScores', 'matchHistory', 'roundNumber', 'lastWinnerIndex', 'lastWinnerPayload',
+            'turnTimerSeconds', 'tileVariant', 'turnLog', 'turnSeq'
+        ];
+
+        // Solo and host games are saved after every action (and at the end of a round) so a reload
+        // or a crashed tab picks up where it left off; a host also re-opens its room (resumeHosting).
         function saveGameToLocalStorage() {
-            if (!gameState.gameStarted || netState.mode === 'client') return;
+            if (!gameState.matchInProgress || netState.mode === 'client') return;
             try {
-                // We need to serialize carefully (no circular refs)
-                const serializable = {
-                    mode: netState.mode,
-                    roomCode: netState.roomCode,
-                    players: gameState.players.map(p => ({
-                        name: p.name,
-                        clientId: p.clientId,
-                        isBot: !!p.isBot,
-                        rack: p.rack,
-                        hasInitial: p.hasInitial
-                    })),
-                    currentPlayerIndex: gameState.currentPlayerIndex,
-                    tableMelds: gameState.tableMelds,
-                    pool: gameState.pool,
-                    playedThisTurn: gameState.playedThisTurn,
-                    playedTileFromRackThisTurn: gameState.playedTileFromRackThisTurn,
-                    hasDrawnThisTurn: gameState.hasDrawnThisTurn,
-                    initialPointsThisTurn: gameState.initialPointsThisTurn,
-                    turnMeldIds: gameState.turnMeldIds,
-                    cumulativeScores: gameState.cumulativeScores,
-                    matchHistory: gameState.matchHistory,
-                    roundNumber: gameState.roundNumber,
-                    turnSnapshot: gameState.turnSnapshot,
-                    turnTimerSeconds: gameState.turnTimerSeconds,
-                    tileVariant: gameState.tileVariant,
-                    turnLog: gameState.turnLog,
-                    lastWinnerIndex: gameState.lastWinnerIndex,
-                    gameStarted: true
-                };
-                storageSet(SAVE_KEY, JSON.stringify(serializable));
+                const data = { mode: netState.mode, roomCode: netState.roomCode };
+                PERSISTED_KEYS.forEach(k => { data[k] = gameState[k]; });
+                storageSet(SAVE_KEY, JSON.stringify(data));
             } catch (e) {
                 console.warn('Could not save game state', e);
             }
         }
 
         function loadGameFromLocalStorage() {
+            const saved = storageGet(SAVE_KEY);
+            if (!saved) return false;
+            let parsed;
             try {
-                const saved = storageGet(SAVE_KEY);
-                if (!saved) return false;
-
-                const parsed = JSON.parse(saved);
-                if (!parsed.gameStarted || !parsed.players || parsed.players.length < 2) return false;
-
-                // Restore state
-                gameState.players = parsed.players;
-                gameState.currentPlayerIndex = parsed.currentPlayerIndex || 0;
-                gameState.tableMelds = parsed.tableMelds || [];
-                gameState.pool = parsed.pool || [];
-                gameState.playedThisTurn = parsed.playedThisTurn || false;
-                gameState.playedTileFromRackThisTurn = parsed.playedTileFromRackThisTurn || false;
-                gameState.hasDrawnThisTurn = parsed.hasDrawnThisTurn || false;
-                gameState.initialPointsThisTurn = parsed.initialPointsThisTurn || 0;
-                gameState.turnMeldIds = parsed.turnMeldIds || [];
-                gameState.cumulativeScores = parsed.cumulativeScores || {};
-                gameState.matchHistory = parsed.matchHistory || [];
-                gameState.roundNumber = parsed.roundNumber || 1;
-                gameState.gameStarted = true;
-                gameState.selectedTileIds = new Set();
-                gameState.turnLog = parsed.turnLog || [];
-                gameState.lastWinnerIndex = parsed.lastWinnerIndex ?? null;
-                const resumeAsHost = parsed.mode === 'host' && !!parsed.roomCode;
-                netState.mode = resumeAsHost ? 'host' : 'solo'; // must be set before captureTurnSnapshot() (uses getCurrentPlayer())
-                gameState.turnSnapshot = parsed.turnSnapshot || null;
-                if (!gameState.turnSnapshot) captureTurnSnapshot(); // older save from before Recall existed
-                gameState.turnTimerSeconds = parsed.turnTimerSeconds !== undefined ? parsed.turnTimerSeconds : 30;
-                gameState.tileVariant = parsed.tileVariant || 'standard';
-                gameState.justDrawnTileIds = {};
-                gameState.newlyPlacedTileIds = [];
-                gameState.pulledFromTableIds = [];
-                gameState.pendingJokerRetrieval = null;
-                gameState.consecutiveEmptyTurns = 0;
-                startTurnTimer(); // give a fresh full countdown rather than guessing elapsed time
-
-                showScreen('game-screen');
-                if (resumeAsHost) resumeHosting(parsed.roomCode);
-                renderAll();
-                scheduleBotTurn();
-                return true;
+                parsed = JSON.parse(saved);
             } catch (e) {
-                console.warn('Failed to load saved game', e);
                 clearSavedGame();
                 return false;
             }
+            if (!(parsed.matchInProgress || parsed.gameStarted) || !parsed.players || parsed.players.length < 2) return false;
+
+            resetTurnState();
+            PERSISTED_KEYS.forEach(k => { if (parsed[k] !== undefined && parsed[k] !== null) gameState[k] = parsed[k]; });
+            gameState.matchInProgress = true;
+            gameState.selectedTileIds = new Set();
+            gameState.lastTurn = null;
+            if (!gameState.turnSnapshot) captureTurnSnapshot();
+
+            const resumeAsHost = parsed.mode === 'host' && !!parsed.roomCode;
+            netState.mode = resumeAsHost ? 'host' : 'solo';
+            showScreen('game-screen');
+            if (resumeAsHost) {
+                try { resumeHosting(parsed.roomCode); }
+                catch (e) { showToast('Could not re-open the room (no connection?). The game is saved; reload to try again.', 'error'); }
+            }
+            if (gameState.gameStarted) {
+                startTurnTimer(); // a fresh full countdown rather than guessing the elapsed time
+                beginTurn({ linger: false });
+            } else {
+                renderAll();
+                if (gameState.lastWinnerPayload) showWinFromPayload(gameState.lastWinnerPayload); // reloaded on the results
+            }
+            return true;
         }
 
         // ==================== PWA & SERVICE WORKER ====================
-        // Service worker source is embedded here as a string and registered via a
-        // Blob URL, so the whole app is a single .html file (no sw.js needed).
-        const SW_SOURCE = `
-            const CACHE_NAME = 'rummikub-pwa-v3';
-            self.addEventListener('install', (event) => { self.skipWaiting(); });
-            self.addEventListener('activate', (event) => {
-                event.waitUntil(
-                    caches.keys().then((names) => Promise.all(
-                        names.map((n) => n !== CACHE_NAME ? caches.delete(n) : null)
-                    )).then(() => self.clients.claim())
-                );
-            });
-            self.addEventListener('fetch', (event) => {
-                // Only cache same-origin GET requests for this page itself.
-                // Cross-origin (Tailwind CDN, PeerJS CDN, PeerJS signaling/STUN/TURN)
-                // must always go straight to the network.
-                const url = new URL(event.request.url);
-                if (url.origin !== self.location.origin || event.request.method !== 'GET') return;
-
-                event.respondWith(
-                    caches.open(CACHE_NAME).then((cache) =>
-                        cache.match(event.request).then((cached) => {
-                            const fetchPromise = fetch(event.request).then((res) => {
-                                if (res && res.ok) cache.put(event.request, res.clone());
-                                return res;
-                            }).catch(() => cached);
-                            return cached || fetchPromise;
-                        })
-                    )
-                );
-            });
-        `;
-
+        // sw.js caches the app shell (this page, tailwind.css, PeerJS) so it opens offline; a
+        // deploy shows up on the next load because same-origin files are fetched network-first.
         function registerServiceWorker() {
             if (!('serviceWorker' in navigator)) return;
-            try {
-                const blob = new Blob([SW_SOURCE], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                navigator.serviceWorker.register(swUrl)
-                    .then(() => console.log('Service Worker registered (offline caching enabled)'))
-                    .catch(err => console.warn('SW registration failed (game still works fine online)', err));
-            } catch (err) {
-                console.warn('SW registration unsupported on this browser (game still works fine online)', err);
-            }
+            navigator.serviceWorker.register('./sw.js')
+                .catch(err => console.warn('SW registration failed (game still works fine online)', err));
         }
 
         // ==================== MENU & HELP ====================
@@ -4201,76 +4222,51 @@
 
         function resetCumulativeScores() {
             hideGameMenu();
+            if (netState.mode === 'client') { showToast('Only the host can reset the scores.', 'info'); return; }
             if (!confirm('Reset cumulative scores for all players?')) return;
             gameState.cumulativeScores = {};
+            renderAll();
             saveGameToLocalStorage();
             showToast('Cumulative scores have been reset.', 'success');
         }
 
         function showMatchHistory() {
             hideGameMenu();
-
-            if (!gameState.matchHistory || gameState.matchHistory.length === 0) {
+            const history = getViewField('matchHistory', gameState.matchHistory);
+            if (!history.length) {
                 showToast("No rounds played yet.", "info");
                 return;
             }
-
-            let html = `<div class="text-sm space-y-2 max-h-[60vh] overflow-y-auto">`;
-            
-            gameState.matchHistory.forEach(entry => {
-                html += `
-                    <div class="flex justify-between items-center bg-black/5 px-4 py-2 rounded-2xl">
-                        <div>
-                            <span class="font-semibold">Round ${entry.round}</span>
-                            <span class="text-black/60 text-xs ml-2">• ${escapeHtml(entry.winner)}</span>
-                        </div>
-                        <div class="font-mono text-emerald-400">+${entry.pointsAwarded}</div>
+            showListModal('Match History', history.map(entry => `
+                <div class="flex justify-between items-center bg-black/5 px-4 py-2 rounded-2xl">
+                    <div>
+                        <span class="font-semibold">Round ${entry.round}</span>
+                        <span class="text-black/60 text-xs ml-2">• ${escapeHtml(entry.winner)}</span>
                     </div>
-                `;
-            });
-            
-            html += `</div>`;
-
-            // Simple modal
-            const modal = document.createElement('div');
-            modal.className = `fixed inset-0 bg-black/80 z-[90] flex items-center justify-center p-6`;
-            modal.innerHTML = `
-                <div class="bg-white w-full max-w-sm rounded-3xl p-6 border border-black/10">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">Match History</h3>
-                        <button onclick="this.closest('.fixed').remove()" class="text-2xl text-black/60 hover:text-black">×</button>
-                    </div>
-                    ${html}
-                    <button onclick="this.closest('.fixed').remove()" 
-                            class="mt-5 w-full py-3 bg-black/10 hover:bg-black/20 rounded-2xl text-sm">
-                        Close
-                    </button>
-                </div>
-            `;
-            document.body.appendChild(modal);
+                    <div class="font-mono text-emerald-400">+${entry.pointsAwarded}</div>
+                </div>`).join(''));
         }
 
         function showHelp() {
             hideGameMenu();
-            const helpText = `RUMMIKUB RULES (v0.95 — Hotseat)
+            const helpText = `RUMMIKUB RULES
 
-• 106 tiles: Red, Blue, Yellow, Black × 2 of each 1-13 + 2 Jokers
-• Deal 14 tiles to each player (Dawie & Ann default for 2-player)
+• Standard set: 106 tiles (Red, Blue, Yellow, Black × 2 of each 1-13) + 2 Jokers; XP set: 160 tiles + 4 Jokers
+• Deal 14 tiles to each player
 • Initial Meld: First play must be valid Group(s) or Run(s) totaling 30+ points
 • Valid Group: 3–4 tiles, same number, different colors (jokers fill missing colors)
 • Valid Run: 3+ consecutive numbers, same color (jokers fill gaps)
 • After initial: Form new valid melds OR click an existing meld on the table to add your selected tiles to it
 • If you can't/won't play valid tiles: Draw 1 from the pool
-• Empty your rack first = win!
+• Empty your rack first = win! A tile taken off the table can never stay in your rack: put it back before the turn ends
 • Who starts: the first round is drawn at random; after that the previous winner never starts — one of the others is drawn (with two players, the loser)
 • Computer players: on the Pass & Play setup tap 🤖 on a seat, or in a hosted room tap "Add computer player". The computer lays every set it can find, adds single tiles to the table, and draws otherwise
-• Jokers are fully supported for forming/adding to melds in this version
 • Steal a joker from a table meld: tap the pulsing joker once you have your own initial meld and a matching tile in your rack — it swaps in for you. The joker must be played into a set the same turn; End Turn warns you once, and a second End Turn puts it back
 • 5-6 players: choose the "XP" tile set (160 tiles, 4 jokers) when starting a game or hosting a room — Standard (106 tiles) only supports up to 4
 • Turn Timer: set a per-turn time limit (default 30s, or off) when starting a game. Running out of time while you haven't played draws a tile for you automatically; running out mid-manipulation undoes the rearrangement first
 • Drawing a tile always ends your turn immediately — no need to tap End Turn afterward
 • You must play at least one tile from your own rack to end your turn. Rearranging tiles already on the table is only allowed in service of a play — on its own it isn't a move, so you'll need to either play a tile or draw one (drawing undoes the rearrangement)
-• Drag & drop: drag rack tiles onto "Drop here" to form a new meld, or onto an existing meld to add to it. Once you have your own initial meld, you can also drag tiles already on the table — onto another meld, or back to your own rack. A meld will split in two if you pull a tile out of the middle of a long run and both halves are still valid; melds may sit incomplete mid-turn, but the whole table must be valid again before the turn can end (Recall Turn undoes everything)
+• Drag & drop: drag rack tiles onto empty table space to form a new meld, or onto an existing meld to add to it. Once you have your own initial meld, you can also drag tiles already on the table — onto another meld, or back to your own rack. A meld will split in two if you pull a tile out of the middle of a long run and both halves are still valid; melds may sit incomplete mid-turn, but the whole table must be valid again before the turn can end (Recall Turn undoes everything)
 
 Have fun on the Weskus!`;
 
@@ -4281,11 +4277,9 @@ Have fun on the Weskus!`;
         // Immediate reconnect attempt (skipping the backoff) when the app regains focus/network
         function recoverNetworkNow() {
             if (netState.mode === 'client') {
-                // A link that was "open" while the tab slept is usually dead: if nothing has
-                // arrived for the staleness window, rebuild it now rather than in 4-20s.
-                if (clientConnOpen() && netState.lastNetActivityAt && Date.now() - netState.lastNetActivityAt > 20000) {
-                    try { netState.conns[0].close(); } catch (e) { /* best effort */ }
-                }
+                // A link that was "open" while the tab slept is usually dead: rebuild it now
+                // rather than in 4-20s
+                closeStaleHostLink();
                 if (!clientConnOpen()) {
                     netState.nextRetryAt = 0;
                     connectToHost();
@@ -4303,6 +4297,7 @@ Have fun on the Weskus!`;
             if (!saved) return false;
             try {
                 const { roomCode, name } = JSON.parse(saved);
+                netState.hasEverJoined = true; // we had a seat: keep retrying if the host is still coming back
                 joinRoom(name, roomCode);
                 return true;
             } catch (e) {
@@ -4311,7 +4306,12 @@ Have fun on the Weskus!`;
             }
         }
 
+        const TIMER_OPTIONS = [[0, 'Off'], [15, '15 seconds'], [30, '30 seconds (default)'], [45, '45 seconds'], [60, '60 seconds'], [90, '90 seconds']];
+
         function init() {
+            document.querySelectorAll('select[data-timer-select]').forEach(sel => {
+                sel.innerHTML = TIMER_OPTIONS.map(([v, label]) => `<option value="${v}"${v === 30 ? ' selected' : ''}>${label}</option>`).join('');
+            });
             selectPlayerCount(2);
             registerServiceWorker();
 
@@ -4326,12 +4326,12 @@ Have fun on the Weskus!`;
                 const visible = document.visibilityState === 'visible';
                 document.body.classList.toggle('app-hidden', !visible);
                 if (!visible) { stopTimerLoop(); return; }
-                ensureAudioAlive(false);
+                ensureAudioAlive();
                 startTimerLoopIfNeeded();
                 recoverNetworkNow();
             });
             window.addEventListener('online', () => {
-                ensureAudioAlive(false);
+                ensureAudioAlive();
                 recoverNetworkNow();
             });
 
@@ -4343,9 +4343,9 @@ Have fun on the Weskus!`;
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
                     if (isOverlayOpen('pass-modal')) {
-                        setOverlay('pass-modal', false);
+                        confirmPassToNext();
                     } else if (isOverlayOpen('win-modal')) {
-                        closeWinModal();
+                        viewBoardFromWin(); // the results stay reachable from the pill
                     } else if (isOverlayOpen('game-menu')) {
                         hideGameMenu();
                     } else if (isScreenShown('game-screen')) {
@@ -4353,10 +4353,6 @@ Have fun on the Weskus!`;
                     }
                 }
 
-                if (e.key.toLowerCase() === 's' && isScreenShown('game-screen')) {
-                    e.preventDefault();
-                    sortRack();
-                }
             });
 
             console.log('%c[Rummikub PWA] Initialized successfully. Ready for family games!', 'color:#0A84FF');
